@@ -1,0 +1,306 @@
+{% extends "base.html" %}
+
+{% block title %}编辑中药{% endblock %}
+
+{% block additional_styles %}
+<style>
+    .menu-sidebar {
+        background-color: rgba(244, 241, 234, 0.9);
+        border-right: 1px solid var(--border-color);
+        min-height: calc(100vh - 72px);
+        padding-top: 1rem;
+    }
+    
+    .sidebar-menu {
+        list-style: none;
+        padding: 0;
+    }
+    
+    .sidebar-menu li {
+        margin-bottom: 0.5rem;
+    }
+    
+    .sidebar-menu a {
+        display: block;
+        padding: 0.75rem 1rem;
+        color: var(--primary-color);
+        border-radius: 5px;
+        transition: all 0.3s ease;
+        text-decoration: none;
+    }
+    
+    .sidebar-menu a:hover, .sidebar-menu a.active {
+        background-color: rgba(212, 176, 114, 0.2);
+        padding-left: 1.5rem;
+    }
+    
+    .sidebar-menu i {
+        margin-right: 0.5rem;
+        width: 20px;
+        text-align: center;
+    }
+    
+    .form-card {
+        border-radius: 10px;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.05);
+        border: none;
+    }
+    
+    .form-card .card-header {
+        background-color: rgba(212, 176, 114, 0.1);
+        border-bottom: 1px solid rgba(212, 176, 114, 0.2);
+        padding: 0.75rem 1.25rem;
+    }
+    
+    .form-label {
+        font-weight: 500;
+        color: var(--primary-color);
+    }
+    
+    .form-card .form-control:focus, .form-card .form-select:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.25rem rgba(212, 176, 114, 0.25);
+    }
+    
+    .char-count {
+        color: #6c757d;
+        font-size: 0.85rem;
+        text-align: right;
+    }
+    
+    .image-preview {
+        max-width: 100%;
+        max-height: 250px;
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+        padding: 4px;
+        margin-top: 10px;
+    }
+    
+    .preview-area {
+        text-align: center;
+        margin-top: 10px;
+    }
+    
+    .preview-info {
+        margin-top: 10px;
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+    
+    .required-field::after {
+        content: "*";
+        color: var(--bs-danger);
+        margin-left: 4px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- 侧边栏菜单 -->
+        <div class="col-md-2 menu-sidebar">
+            <h5 class="text-center mb-4"><i class="bi bi-gear-fill me-2"></i>管理菜单</h5>
+            <ul class="sidebar-menu">
+                <li><a href="{{ url_for('admin.dashboard') }}"><i class="bi bi-speedometer2"></i>控制面板</a></li>
+                <li><a href="{{ url_for('admin.manage_herbs') }}" class="active"><i class="bi bi-flower1"></i>中药管理</a></li>
+                <li><a href="{{ url_for('admin.formulas') }}"><i class="bi bi-journal-medical"></i>方剂管理</a></li>
+                <li><a href="{{ url_for('admin.manage_articles') }}"><i class="bi bi-file-earmark-text"></i>文章管理</a></li>
+                <li><a href="{{ url_for('admin.manage_videos') }}"><i class="bi bi-camera-video"></i>视频管理</a></li>
+                <li><a href="{{ url_for('admin.manage_users') }}"><i class="bi bi-people"></i>用户管理</a></li>
+                <li><a href="{{ url_for('home') }}"><i class="bi bi-house-door"></i>返回首页</a></li>
+            </ul>
+        </div>
+        
+        <!-- 主要内容区 -->
+        <div class="col-md-10 p-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="bi bi-pencil-square me-2"></i>编辑中药</h2>
+                <a href="{{ url_for('admin.manage_herbs') }}" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-left me-1"></i>返回中药列表
+                </a>
+            </div>
+            
+            {% if error %}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                {{ error }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endif %}
+            
+            {% if success %}
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                {{ success }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endif %}
+            
+            <div class="card form-card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-pencil-square me-2"></i>中药信息</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{{ url_for('admin.edit_herb', herb_id=herb.id) }}" enctype="multipart/form-data">
+                        <div class="row">
+                            <!-- 左侧表单列 -->
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="name" class="form-label required-field">中药名称</label>
+                                    <input type="text" class="form-control" id="name" name="name" value="{{ herb.name }}" maxlength="100" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="pinyin" class="form-label required-field">拼音</label>
+                                    <input type="text" class="form-control" id="pinyin" name="pinyin" value="{{ herb.pinyin }}" maxlength="100" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="alias" class="form-label">别名</label>
+                                    <input type="text" class="form-control" id="alias" name="alias" value="{{ herb.alias }}" maxlength="200">
+                                    <div class="form-text">多个别名请用逗号分隔</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="category" class="form-label required-field">分类</label>
+                                    <select class="form-select" id="category" name="category" required>
+                                        <option value="" disabled>请选择分类</option>
+                                        {% for category in categories %}
+                                        <option value="{{ category }}" {% if herb.category == category %}selected{% endif %}>{{ category }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="property" class="form-label required-field">药性</label>
+                                            <select class="form-select" id="property" name="property" required>
+                                                <option value="" disabled>请选择药性</option>
+                                                <option value="温" {% if herb.property == '温' %}selected{% endif %}>温</option>
+                                                <option value="凉" {% if herb.property == '凉' %}selected{% endif %}>凉</option>
+                                                <option value="寒" {% if herb.property == '寒' %}selected{% endif %}>寒</option>
+                                                <option value="热" {% if herb.property == '热' %}selected{% endif %}>热</option>
+                                                <option value="平" {% if herb.property == '平' %}selected{% endif %}>平</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="taste" class="form-label">味道</label>
+                                            <input type="text" class="form-control" id="taste" name="taste" value="{{ herb.taste }}" maxlength="50">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="meridian_tropism" class="form-label">归经</label>
+                                    <input type="text" class="form-control" id="meridian_tropism" name="meridian_tropism" value="{{ herb.meridian_tropism }}" maxlength="100">
+                                </div>
+                            </div>
+                            
+                            <!-- 右侧表单列 -->
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="functions" class="form-label required-field">功效</label>
+                                    <textarea class="form-control" id="functions" name="functions" rows="3" maxlength="500" required>{{ herb.functions }}</textarea>
+                                    <div class="char-count"><span id="functionsCount">0</span>/500</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="indications" class="form-label required-field">主治</label>
+                                    <textarea class="form-control" id="indications" name="indications" rows="3" maxlength="500" required>{{ herb.indications }}</textarea>
+                                    <div class="char-count"><span id="indicationsCount">0</span>/500</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="usage" class="form-label">用法用量</label>
+                                    <textarea class="form-control" id="usage" name="usage" rows="2" maxlength="300">{{ herb.usage }}</textarea>
+                                    <div class="char-count"><span id="usageCount">0</span>/300</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="contraindications" class="form-label">禁忌</label>
+                                    <textarea class="form-control" id="contraindications" name="contraindications" rows="2" maxlength="300">{{ herb.contraindications }}</textarea>
+                                    <div class="char-count"><span id="contraindicationsCount">0</span>/300</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="image" class="form-label">图片</label>
+                                    <input type="file" class="form-control" id="image" name="image" accept="image/*">
+                                    <div class="form-text">支持的格式：JPG, PNG, WEBP. 最大文件大小：5MB</div>
+                                    
+                                    {% if herb.image_url %}
+                                    <div id="previewArea" class="preview-area" style="display: block;">
+                                        <img id="imagePreview" class="image-preview" src="{{ herb.image_url }}">
+                                        <div class="preview-info">当前图片</div>
+                                    </div>
+                                    {% else %}
+                                    <div id="previewArea" class="preview-area">
+                                        <img id="imagePreview" class="image-preview">
+                                        <div class="preview-info">图片预览</div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-4 pt-2 border-top">
+                            <a href="{{ url_for('admin.manage_herbs') }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-lg me-1"></i>取消
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save me-1"></i>保存修改
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 字符计数功能
+        function updateCharCount(textareaId, countId) {
+            const textarea = document.getElementById(textareaId);
+            const counter = document.getElementById(countId);
+            
+            function updateCount() {
+                counter.textContent = textarea.value.length;
+            }
+            
+            textarea.addEventListener('input', updateCount);
+            updateCount(); // 初始计数
+        }
+        
+        // 为每个文本域设置计数器
+        updateCharCount('functions', 'functionsCount');
+        updateCharCount('indications', 'indicationsCount');
+        updateCharCount('usage', 'usageCount');
+        updateCharCount('contraindications', 'contraindicationsCount');
+        
+        // 图片预览功能
+        const imageInput = document.getElementById('image');
+        const imagePreview = document.getElementById('imagePreview');
+        const previewArea = document.getElementById('previewArea');
+        
+        imageInput.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    imagePreview.src = e.target.result;
+                    previewArea.style.display = 'block';
+                    document.querySelector('.preview-info').textContent = "新图片预览";
+                };
+                
+                reader.readAsDataURL(this.files[0]);
+            }
+        });
+    });
+</script>
+{% endblock %} 

@@ -1,0 +1,310 @@
+/* 视频播放器样式 */
+.video-container {
+    position: relative;
+    width: 100%;
+    max-width: 860px;
+    padding-top: 56.25%; /* 16:9 比例 */
+    margin: 0 auto;
+    background-color: #f8f9fa;
+    border-radius: 10px 10px 0 0;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.video-container:hover {
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.video-container video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background-color: #000;
+    transition: all 0.3s ease;
+}
+
+/* 加载状态样式 */
+.video-loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    transition: opacity 0.4s ease, background-color 0.3s ease;
+}
+
+.video-container .spinner-border {
+    width: 3.5rem;
+    height: 3.5rem;
+    color: #28a745 !important;
+    animation: spinner-grow 1.2s linear infinite;
+}
+
+.loading-text {
+    color: white;
+    margin-top: 15px;
+    font-size: 14px;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    opacity: 0.9;
+}
+
+/* 控制条样式 */
+.video-controls {
+    margin-top: -5px;
+    margin-bottom: 20px;
+    padding: 15px 20px;
+    background-color: #f8f9fa;
+    border-radius: 0 0 10px 10px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    border-top: none;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    transition: background-color 0.3s ease;
+}
+
+.video-controls:hover {
+    background-color: #e9ecef;
+}
+
+/* 视频通知样式 */
+.video-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    min-width: 250px;
+    padding: 15px 20px;
+    background-color: rgba(40, 167, 69, 0.9);
+    color: white;
+    border-radius: 5px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    display: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.video-notification.error {
+    background-color: rgba(220, 53, 69, 0.9);
+}
+
+.video-notification.warning {
+    background-color: rgba(255, 193, 7, 0.9);
+    color: #212529;
+}
+
+/* 分享按钮样式 */
+.share-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    margin-left: 8px;
+    border-radius: 50%;
+    color: white;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.share-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.share-wechat {
+    background-color: #07C160;
+}
+
+.share-weibo {
+    background-color: #E6162D;
+}
+
+.share-link {
+    background-color: #6c757d;
+}
+
+/* 视频标题和元数据样式 */
+.video-title {
+    font-size: 1.7rem;
+    font-weight: 600;
+    color: #333;
+    line-height: 1.3;
+    margin-bottom: 15px;
+}
+
+.video-meta {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.video-meta i {
+    color: #28a745;
+}
+
+.category-badge {
+    background-color: #28a745;
+    font-weight: normal;
+    padding: 5px 10px;
+}
+
+/* 视频描述样式 */
+.video-description {
+    margin-top: 20px;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.video-description h3 {
+    font-size: 1.3rem;
+    color: #333;
+    margin-bottom: 15px;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .video-container {
+        padding-top: 56.25%; /* 保持16:9比例 */
+        max-width: 100%;
+    }
+    
+    .video-title {
+        font-size: 1.4rem;
+    }
+    
+    .video-notification {
+        width: 90%;
+        top: 10px;
+        right: 5%;
+        min-width: 0;
+    }
+    
+    .video-container .spinner-border {
+        width: 2.5rem;
+        height: 2.5rem;
+    }
+    
+    .loading-text {
+        font-size: 12px;
+    }
+    
+    .video-controls {
+        padding: 10px 15px;
+    }
+    
+    .time-display {
+        font-size: 0.8rem;
+        margin: 0 5px;
+    }
+    
+    .volume-slider {
+        width: 60px;
+    }
+}
+
+/* 正在播放指示器 */
+.playing-indicator {
+    position: absolute;
+    bottom: 15px;
+    right: 15px;
+    background-color: rgba(40, 167, 69, 0.8);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    z-index: 5;
+    display: none;
+}
+
+video:playing ~ .playing-indicator {
+    display: block;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 0.8;
+    }
+    50% {
+        opacity: 0.4;
+    }
+    100% {
+        opacity: 0.8;
+    }
+}
+
+/* 全屏模式样式 */
+.video-container:-webkit-full-screen {
+    width: 100% !important;
+    height: 100% !important;
+    background: black;
+}
+
+.video-container:fullscreen {
+    width: 100% !important;
+    height: 100% !important;
+    background: black;
+}
+
+/* 鼠标悬停显示光标 */
+.video-container video {
+    cursor: pointer;
+}
+
+/* 分享按钮增强效果 */
+.share-button, .share-link {
+    transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.share-button:hover, .share-link:hover {
+    transform: scale(1.15);
+}
+
+/* 缓冲指示器 */
+.buffering-indicator {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 20px;
+    display: none;
+    z-index: 15;
+    animation: fadeInOut 1.5s infinite;
+}
+
+@keyframes fadeInOut {
+    0% { opacity: 0.7; }
+    50% { opacity: 1; }
+    100% { opacity: 0.7; }
+}
+
+/* 视频播放质量选择器 */
+.quality-selector {
+    position: relative;
+    display: inline-block;
+    margin-left: 10px;
+}
+
+.quality-selector .dropdown-menu {
+    min-width: 80px;
+}
+
+.quality-selector .dropdown-item {
+    padding: 0.25rem 1rem;
+    font-size: 0.85rem;
+} 
+

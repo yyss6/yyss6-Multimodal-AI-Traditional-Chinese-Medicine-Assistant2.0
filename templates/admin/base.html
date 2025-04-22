@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block additional_styles %}
+<!-- 引入管理系统侧边栏样式 -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin_sidebar.css') }}">
+<style>
+    /* 管理界面额外样式 */
+    .menu-sidebar h5 {
+        font-size: 1.3rem;
+        color: var(--primary-color);
+        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--border-color);
+        margin-bottom: 1.5rem;
+    }
+    
+    .menu-sidebar h5 i {
+        font-size: 1.4rem;
+    }
+</style>
+<!-- 允许特定页面添加额外样式 -->
+{% block admin_styles %}{% endblock %}
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- 侧边栏菜单 -->
+        <div class="col-md-2 menu-sidebar">
+            <h5 class="text-center mb-4"><i class="bi bi-gear-fill me-2"></i>管理菜单</h5>
+            <ul class="sidebar-menu">
+                <li><a href="{{ url_for('admin.dashboard') }}" {% if request.endpoint == 'admin.dashboard' %}class="active"{% endif %}><i class="bi bi-speedometer2"></i>控制面板</a></li>
+                <li><a href="{{ url_for('admin.manage_herbs') }}" {% if 'herb' in request.endpoint %}class="active"{% endif %}><i class="bi bi-flower1"></i>中药管理</a></li>
+                <li><a href="{{ url_for('admin.formulas') }}" {% if 'formula' in request.endpoint %}class="active"{% endif %}><i class="bi bi-journal-medical"></i>方剂管理</a></li>
+                <li><a href="{{ url_for('admin.manage_articles') }}" {% if 'article' in request.endpoint %}class="active"{% endif %}><i class="bi bi-file-earmark-text"></i>文章管理</a></li>
+                <li><a href="{{ url_for('admin.manage_videos') }}" {% if 'video' in request.endpoint %}class="active"{% endif %}><i class="bi bi-camera-video"></i>视频管理</a></li>
+                <li><a href="{{ url_for('admin.manage_users') }}" {% if request.endpoint == 'admin.manage_users' %}class="active"{% endif %}><i class="bi bi-people"></i>用户管理</a></li>
+                <li><a href="{{ url_for('home') }}"><i class="bi bi-house-door"></i>返回首页</a></li>
+            </ul>
+        </div>
+        
+        <!-- 主要内容区 -->
+        <div class="col-md-10 p-4">
+            {% block admin_content %}{% endblock %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

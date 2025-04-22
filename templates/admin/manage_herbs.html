@@ -1,0 +1,296 @@
+{% extends "admin/base.html" %}
+
+{% block title %}中药管理{% endblock %}
+
+{% block admin_styles %}
+<style>
+    .herbs-table {
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.05);
+    }
+    
+    .herbs-table th {
+        background-color: rgba(212, 176, 114, 0.1);
+        font-weight: 600;
+        color: var(--primary-color);
+        border-bottom: 1px solid rgba(212, 176, 114, 0.2);
+    }
+    
+    .herbs-table tbody tr {
+        transition: all 0.2s ease;
+    }
+    
+    .herbs-table tbody tr:hover {
+        background-color: rgba(244, 241, 234, 0.5);
+    }
+    
+    .herbs-table .herb-image {
+        width: 50px;
+        height: 50px;
+        object-fit: cover;
+        border-radius: 5px;
+        transition: transform 0.2s ease;
+    }
+    
+    .herbs-table .herb-image:hover {
+        transform: scale(1.5);
+    }
+    
+    .herbs-table .actions {
+        white-space: nowrap;
+    }
+    
+    .herbs-table .badge {
+        padding: 0.35em 0.65em;
+        font-weight: 500;
+    }
+    
+    .search-box {
+        position: relative;
+    }
+    
+    .search-box .form-control {
+        padding-right: 40px;
+        border-radius: 20px;
+    }
+    
+    .search-box .search-icon {
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+    }
+    
+    .filter-btn {
+        border-radius: 20px;
+    }
+    
+    .pagination {
+        margin-bottom: 0;
+    }
+    
+    .pagination .page-link {
+        color: var(--primary-color);
+        border-color: rgba(212, 176, 114, 0.2);
+    }
+    
+    .pagination .page-item.active .page-link {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+        color: white;
+    }
+    
+    .category-filter {
+        max-width: 200px;
+    }
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-flower1 me-2"></i>中药管理</h2>
+    <div>
+        <a href="{{ url_for('home') }}" class="btn btn-outline-primary me-2">
+            <i class="bi bi-house-door-fill me-1"></i>返回首页
+        </a>
+        <a href="{{ url_for('admin.add_herb') }}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i>添加中药
+        </a>
+    </div>
+</div>
+
+{% if error %}
+<div class="alert alert-danger alert-dismissible fade show" role="alert">
+    {{ error }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endif %}
+
+{% if success %}
+<div class="alert alert-success alert-dismissible fade show" role="alert">
+    {{ success }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endif %}
+
+<!-- 搜索和过滤栏 -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form action="{{ url_for('admin.manage_herbs') }}" method="get" class="row g-3 align-items-center">
+            <div class="col-md-5">
+                <div class="search-box">
+                    <input type="text" class="form-control" name="search" placeholder="搜索中药名称、拼音或别名..." value="{{ request.args.get('search', '') }}">
+                    <i class="bi bi-search search-icon"></i>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select category-filter" name="category">
+                    <option value="">所有分类</option>
+                    {% for category in categories %}
+                    <option value="{{ category }}" {% if request.args.get('category') == category %}selected{% endif %}>{{ category }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" name="property">
+                    <option value="">所有药性</option>
+                    <option value="温" {% if request.args.get('property') == '温' %}selected{% endif %}>温</option>
+                    <option value="凉" {% if request.args.get('property') == '凉' %}selected{% endif %}>凉</option>
+                    <option value="寒" {% if request.args.get('property') == '寒' %}selected{% endif %}>寒</option>
+                    <option value="热" {% if request.args.get('property') == '热' %}selected{% endif %}>热</option>
+                    <option value="平" {% if request.args.get('property') == '平' %}selected{% endif %}>平</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary filter-btn w-100">
+                    <i class="bi bi-funnel-fill me-1"></i>筛选
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 中药列表表格 -->
+<div class="card herbs-table">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th width="70">图片</th>
+                        <th>名称</th>
+                        <th>分类</th>
+                        <th>药性/归经</th>
+                        <th>功效</th>
+                        <th width="120">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for herb in herbs %}
+                    <tr>
+                        <td>
+                            {% if herb.image_url %}
+                            <img src="{{ herb.image_url }}" alt="{{ herb.name }}" class="herb-image">
+                            {% else %}
+                            <div class="herb-image bg-light d-flex align-items-center justify-content-center">
+                                <i class="bi bi-flower1 text-muted"></i>
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="fw-bold">{{ herb.name }}</div>
+                            <small class="text-muted">{{ herb.pinyin }}</small>
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark">{{ herb.category }}</span>
+                        </td>
+                        <td>
+                            {% if herb.property %}
+                            <span class="text-muted">{{ herb.property }}</span>
+                            {% endif %}
+                            {% if herb.meridian %}
+                            <small class="d-block">{{ herb.meridian }}</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <small>{{ herb.functions|truncate(50) }}</small>
+                        </td>
+                        <td class="actions">
+                            <a href="{{ url_for('admin.view_herb', herb_id=herb.id) }}" class="btn btn-sm btn-outline-info">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a href="{{ url_for('admin.edit_herb', herb_id=herb.id) }}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ herb.id }}">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                            
+                            <!-- 删除确认对话框 -->
+                            <div class="modal fade" id="deleteModal{{ herb.id }}" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="deleteModalLabel">确认删除</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p>确定要删除中药 <strong>{{ herb.name }}</strong> 吗？此操作无法撤销。</p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                                            <form action="{{ url_for('admin.delete_herb', herb_id=herb.id) }}" method="post" class="d-inline">
+                                                <button type="submit" class="btn btn-danger">确认删除</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center py-4">
+                            {% if search or category %}
+                            <p class="text-muted mb-2">没有找到符合条件的中药</p>
+                            <a href="{{ url_for('admin.manage_herbs') }}" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-arrow-repeat me-1"></i>查看所有中药
+                            </a>
+                            {% else %}
+                            <p class="text-muted mb-2">暂无中药数据</p>
+                            <a href="{{ url_for('admin.add_herb') }}" class="btn btn-sm btn-primary">
+                                <i class="bi bi-plus-lg me-1"></i>添加第一个中药
+                            </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- 分页 -->
+{% if total_pages > 1 %}
+<div class="d-flex justify-content-between align-items-center mt-4">
+    <div>
+        显示 {{ herbs.total }} 个中药中的第 {{ (herbs.page - 1) * herbs.per_page + 1 }} 到
+        {% if herbs.page * herbs.per_page > herbs.total %}
+            {{ herbs.total }}
+        {% else %}
+            {{ herbs.page * herbs.per_page }}
+        {% endif %} 条
+    </div>
+    <nav aria-label="Page navigation">
+        <ul class="pagination">
+            <li class="page-item {% if page == 1 %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('admin.manage_herbs', page=page-1, search=search, category=category) }}" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+            
+            {% for p in range(1, total_pages + 1) %}
+                {% if p == page %}
+                    <li class="page-item active"><a class="page-link" href="#">{{ p }}</a></li>
+                {% elif p == 1 or p == total_pages or (p >= page - 2 and p <= page + 2) %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('admin.manage_herbs', page=p, search=search, category=category) }}">{{ p }}</a>
+                    </li>
+                {% elif p == page - 3 or p == page + 3 %}
+                    <li class="page-item disabled"><a class="page-link" href="#">...</a></li>
+                {% endif %}
+            {% endfor %}
+            
+            <li class="page-item {% if page == total_pages %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('admin.manage_herbs', page=page+1, search=search, category=category) }}" aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</div>
+{% endif %}
+{% endblock %} 

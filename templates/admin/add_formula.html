@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+
+{% block title %}添加方剂{% endblock %}
+
+{% block additional_styles %}
+<style>
+    .menu-sidebar {
+        background-color: rgba(244, 241, 234, 0.9);
+        border-right: 1px solid var(--border-color);
+        min-height: calc(100vh - 72px);
+        padding-top: 1rem;
+    }
+    
+    .sidebar-menu {
+        list-style: none;
+        padding: 0;
+    }
+    
+    .sidebar-menu li {
+        margin-bottom: 0.5rem;
+    }
+    
+    .sidebar-menu a {
+        display: block;
+        padding: 0.75rem 1rem;
+        color: var(--primary-color);
+        border-radius: 5px;
+        transition: all 0.3s ease;
+        text-decoration: none;
+    }
+    
+    .sidebar-menu a:hover, .sidebar-menu a.active {
+        background-color: rgba(212, 176, 114, 0.2);
+        padding-left: 1.5rem;
+    }
+    
+    .sidebar-menu i {
+        margin-right: 0.5rem;
+        width: 20px;
+        text-align: center;
+    }
+    
+    .form-card {
+        border-radius: 10px;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.05);
+        border: none;
+    }
+    
+    .form-card .card-header {
+        background-color: rgba(212, 176, 114, 0.1);
+        border-bottom: 1px solid rgba(212, 176, 114, 0.2);
+        padding: 0.75rem 1.25rem;
+    }
+    
+    .form-label {
+        font-weight: 500;
+        color: var(--primary-color);
+    }
+    
+    .form-card .form-control:focus, .form-card .form-select:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.25rem rgba(212, 176, 114, 0.25);
+    }
+    
+    .char-count {
+        color: #6c757d;
+        font-size: 0.85rem;
+        text-align: right;
+    }
+    
+    .required-field::after {
+        content: "*";
+        color: var(--bs-danger);
+        margin-left: 4px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- 侧边栏菜单 -->
+        <div class="col-md-2 menu-sidebar">
+            <h5 class="text-center mb-4"><i class="bi bi-gear-fill me-2"></i>管理菜单</h5>
+            <ul class="sidebar-menu">
+                <li><a href="{{ url_for('admin.dashboard') }}"><i class="bi bi-speedometer2"></i>控制面板</a></li>
+                <li><a href="{{ url_for('admin.manage_herbs') }}"><i class="bi bi-flower1"></i>中药管理</a></li>
+                <li><a href="{{ url_for('admin.formulas') }}" class="active"><i class="bi bi-journal-medical"></i>方剂管理</a></li>
+                <li><a href="{{ url_for('admin.manage_articles') }}"><i class="bi bi-file-earmark-text"></i>文章管理</a></li>
+                <li><a href="{{ url_for('admin.manage_videos') }}"><i class="bi bi-camera-video"></i>视频管理</a></li>
+                <li><a href="{{ url_for('admin.manage_users') }}"><i class="bi bi-people"></i>用户管理</a></li>
+                <li><a href="{{ url_for('home') }}"><i class="bi bi-house-door"></i>返回首页</a></li>
+            </ul>
+        </div>
+        
+        <!-- 主要内容区 -->
+        <div class="col-md-10 p-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="bi bi-plus-circle me-2"></i>添加方剂</h2>
+                <a href="{{ url_for('admin.formulas') }}" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-left me-1"></i>返回方剂列表
+                </a>
+            </div>
+            
+            {% if error %}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                {{ error }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endif %}
+            
+            {% if success %}
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                {{ success }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endif %}
+            
+            <div class="card form-card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-pencil-square me-2"></i>方剂信息</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{{ url_for('admin.add_formula') }}">
+                        <div class="row">
+                            <!-- 左侧表单列 -->
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="name" class="form-label required-field">方剂名称</label>
+                                    <input type="text" class="form-control" id="name" name="name" value="{{ request.form.name or '' }}" maxlength="100" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="pinyin" class="form-label required-field">拼音</label>
+                                    <input type="text" class="form-control" id="pinyin" name="pinyin" value="{{ request.form.pinyin or '' }}" maxlength="100" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="alias" class="form-label">别名</label>
+                                    <input type="text" class="form-control" id="alias" name="alias" value="{{ request.form.alias or '' }}" maxlength="200">
+                                    <div class="form-text">多个别名请用逗号分隔</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="category" class="form-label required-field">分类</label>
+                                    <select class="form-select" id="category" name="category" required>
+                                        <option value="" disabled selected>请选择分类</option>
+                                        {% for category in categories %}
+                                        <option value="{{ category }}" {% if request.form.category == category %}selected{% endif %}>{{ category }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="classic_source" class="form-label">出处</label>
+                                    <input type="text" class="form-control" id="classic_source" name="classic_source" value="{{ request.form.classic_source or '' }}">
+                                </div>
+                            </div>
+                            
+                            <!-- 右侧表单列 -->
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="composition" class="form-label required-field">组成</label>
+                                    <textarea class="form-control" id="composition" name="composition" rows="3" maxlength="1000" required>{{ request.form.composition or '' }}</textarea>
+                                    <div class="form-text">按照"药名+用量"格式填写，如"人参9g，白术9g，茯苓9g，甘草6g"</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="preparation" class="form-label">制法</label>
+                                    <textarea class="form-control" id="preparation" name="preparation" rows="2" maxlength="500">{{ request.form.preparation or '' }}</textarea>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="functions" class="form-label required-field">功效</label>
+                                    <textarea class="form-control" id="functions" name="functions" rows="2" maxlength="500" required>{{ request.form.functions or '' }}</textarea>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="indications" class="form-label required-field">主治</label>
+                                    <textarea class="form-control" id="indications" name="indications" rows="3" maxlength="1000" required>{{ request.form.indications or '' }}</textarea>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="usage" class="form-label">用法用量</label>
+                                    <textarea class="form-control" id="usage" name="usage" rows="2" maxlength="500">{{ request.form.usage or '' }}</textarea>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="contraindications" class="form-label">禁忌</label>
+                                    <textarea class="form-control" id="contraindications" name="contraindications" rows="2" maxlength="500">{{ request.form.contraindications or '' }}</textarea>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="modifications" class="form-label">加减</label>
+                                    <textarea class="form-control" id="modifications" name="modifications" rows="2" maxlength="500">{{ request.form.modifications or '' }}</textarea>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-4 pt-2 border-top">
+                            <a href="{{ url_for('admin.formulas') }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-lg me-1"></i>取消
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-plus-lg me-1"></i>添加方剂
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 字符计数功能
+        function updateCharCount(textareaId, countId) {
+            const textarea = document.getElementById(textareaId);
+            const counter = document.getElementById(countId);
+            
+            function updateCount() {
+                counter.textContent = textarea.value.length;
+            }
+            
+            textarea.addEventListener('input', updateCount);
+            updateCount(); // 初始计数
+        }
+    });
+</script>
+{% endblock %} 

@@ -1,0 +1,262 @@
+{% extends "base.html" %}
+
+{% block title %}{{ herb.name }} 详情{% endblock %}
+
+{% block additional_styles %}
+<style>
+    .menu-sidebar {
+        background-color: rgba(244, 241, 234, 0.9);
+        border-right: 1px solid var(--border-color);
+        min-height: calc(100vh - 72px);
+        padding-top: 1rem;
+    }
+    
+    .sidebar-menu {
+        list-style: none;
+        padding: 0;
+    }
+    
+    .sidebar-menu li {
+        margin-bottom: 0.5rem;
+    }
+    
+    .sidebar-menu a {
+        display: block;
+        padding: 0.75rem 1rem;
+        color: var(--primary-color);
+        border-radius: 5px;
+        transition: all 0.3s ease;
+        text-decoration: none;
+    }
+    
+    .sidebar-menu a:hover, .sidebar-menu a.active {
+        background-color: rgba(212, 176, 114, 0.2);
+        padding-left: 1.5rem;
+    }
+    
+    .sidebar-menu i {
+        margin-right: 0.5rem;
+        width: 20px;
+        text-align: center;
+    }
+    
+    .herb-detail-card {
+        border-radius: 10px;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.05);
+        border: none;
+    }
+    
+    .herb-image {
+        max-height: 250px;
+        object-fit: cover;
+        border-radius: 8px;
+    }
+    
+    .herb-property {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 20px;
+        background-color: rgba(212, 176, 114, 0.1);
+        margin-right: 8px;
+        margin-bottom: 8px;
+        font-size: 0.9rem;
+    }
+    
+    .section-title {
+        color: var(--primary-color);
+        border-bottom: 2px solid rgba(212, 176, 114, 0.3);
+        padding-bottom: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .action-buttons {
+        position: sticky;
+        bottom: 20px;
+        background-color: #fff;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 -5px 10px rgba(0,0,0,0.05);
+        z-index: 100;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- 侧边栏菜单 -->
+        <div class="col-md-2 menu-sidebar">
+            <h5 class="text-center mb-4"><i class="bi bi-gear-fill me-2"></i>管理菜单</h5>
+            <ul class="sidebar-menu">
+                <li><a href="{{ url_for('admin.dashboard') }}"><i class="bi bi-speedometer2"></i>控制面板</a></li>
+                <li><a href="{{ url_for('admin.manage_herbs') }}" class="active"><i class="bi bi-flower1"></i>中药管理</a></li>
+                <li><a href="{{ url_for('admin.formulas') }}"><i class="bi bi-journal-medical"></i>方剂管理</a></li>
+                <li><a href="{{ url_for('admin.manage_articles') }}"><i class="bi bi-file-earmark-text"></i>文章管理</a></li>
+                <li><a href="{{ url_for('admin.manage_videos') }}"><i class="bi bi-camera-video"></i>视频管理</a></li>
+                <li><a href="{{ url_for('admin.manage_users') }}"><i class="bi bi-people"></i>用户管理</a></li>
+                <li><a href="{{ url_for('home') }}"><i class="bi bi-house-door"></i>返回首页</a></li>
+            </ul>
+        </div>
+        
+        <!-- 主要内容区 -->
+        <div class="col-md-10 p-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="bi bi-flower1 me-2"></i>{{ herb.name }} 详情</h2>
+                <div>
+                    <a href="{{ url_for('admin.edit_herb', herb_id=herb.id) }}" class="btn btn-primary me-2">
+                        <i class="bi bi-pencil-square me-1"></i>编辑
+                    </a>
+                    <a href="{{ url_for('admin.manage_herbs') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i>返回列表
+                    </a>
+                </div>
+            </div>
+            
+            <div class="row">
+                <!-- 中药详情卡片 -->
+                <div class="col-md-8">
+                    <div class="card herb-detail-card mb-4">
+                        <div class="card-body">
+                            <div class="row mb-4">
+                                {% if herb.image_url %}
+                                <div class="col-md-4">
+                                    <img src="{{ herb.image_url }}" alt="{{ herb.name }}" class="herb-image w-100">
+                                </div>
+                                <div class="col-md-8">
+                                {% else %}
+                                <div class="col-12">
+                                {% endif %}
+                                    <h3 class="card-title mb-1">{{ herb.name }}</h3>
+                                    <p class="text-muted mb-3">{{ herb.pinyin }}{% if herb.alias %} ({{ herb.alias }}){% endif %}</p>
+                                    
+                                    <div class="mb-3">
+                                        {% if herb.category %}
+                                        <span class="herb-property"><i class="bi bi-tag me-1"></i>{{ herb.category }}</span>
+                                        {% endif %}
+                                        {% if herb.property %}
+                                        <span class="herb-property"><i class="bi bi-thermometer-half me-1"></i>{{ herb.property }}</span>
+                                        {% endif %}
+                                        {% if herb.taste %}
+                                        <span class="herb-property"><i class="bi bi-droplet me-1"></i>{{ herb.taste }}</span>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    {% if herb.meridian %}
+                                    <p><strong>归经：</strong>{{ herb.meridian }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <h5 class="section-title">功效</h5>
+                                <p>{{ herb.functions }}</p>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <h5 class="section-title">主治</h5>
+                                <p>{{ herb.indications }}</p>
+                            </div>
+                            
+                            {% if herb.usage %}
+                            <div class="mb-4">
+                                <h5 class="section-title">用法用量</h5>
+                                <p>{{ herb.usage }}</p>
+                            </div>
+                            {% endif %}
+                            
+                            {% if herb.dosage %}
+                            <div class="mb-4">
+                                <h5 class="section-title">剂量</h5>
+                                <p>{{ herb.dosage }}</p>
+                            </div>
+                            {% endif %}
+                            
+                            {% if herb.contraindications %}
+                            <div class="mb-4">
+                                <h5 class="section-title">禁忌</h5>
+                                <p>{{ herb.contraindications }}</p>
+                            </div>
+                            {% endif %}
+                            
+                            {% if herb.side_effects %}
+                            <div class="mb-4">
+                                <h5 class="section-title">副作用</h5>
+                                <p>{{ herb.side_effects }}</p>
+                            </div>
+                            {% endif %}
+                            
+                            {% if herb.storage %}
+                            <div class="mb-4">
+                                <h5 class="section-title">存储方法</h5>
+                                <p>{{ herb.storage }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 操作侧边栏 -->
+                <div class="col-md-4">
+                    <div class="card herb-detail-card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-tools me-2"></i>操作</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <a href="{{ url_for('admin.edit_herb', herb_id=herb.id) }}" class="btn btn-outline-primary">
+                                    <i class="bi bi-pencil-square me-1"></i>编辑中药
+                                </a>
+                                
+                                <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                                    <i class="bi bi-trash me-1"></i>删除中药
+                                </button>
+                                
+                                <a href="{{ url_for('herbs.herb_detail', herb_id=herb.id) }}" class="btn btn-outline-success" target="_blank">
+                                    <i class="bi bi-eye me-1"></i>查看前台页面
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card herb-detail-card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>系统信息</h5>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>ID：</strong>{{ herb.id }}</p>
+                            <p><strong>添加/更新日期：</strong>
+                                {% if herb.created_at %}
+                                {{ herb.created_at }}
+                                {% else %}
+                                未知
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 删除确认对话框 -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">确认删除</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>确定要删除中药 <strong>{{ herb.name }}</strong> 吗？此操作不可撤销。</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <form action="{{ url_for('admin.delete_herb', herb_id=herb.id) }}" method="post">
+                    <button type="submit" class="btn btn-danger">确认删除</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

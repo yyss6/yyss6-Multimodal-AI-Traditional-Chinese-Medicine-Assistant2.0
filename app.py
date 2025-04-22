@@ -1,75 +1,72 @@
-from flask import Flask, render_template, request, jsonify, session, Response, url_for
-import requests
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import os
-from dotenv import load_dotenv
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
+import json
 import time
-import urllib3
-import ssl
-from werkzeug.utils import secure_filename
-import docx
-import PyPDF2
-import chardet
+import math
+import uuid
+import base64
 import random
 import string
+import chardet
 import sqlite3
-from datetime import datetime
-import json
-from PIL import Image
-import io
-import base64
-import easyocr
+import requests
+import logging
+import ssl
 import numpy as np
-import cv2
+from io import BytesIO
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for, flash, send_from_directory, Response
+from werkzeug.utils import secure_filename
+from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
+from functools import wraps
+from models import User, HealthProfile, DiagnosisRecord, Appointment
+from forms import RegistrationForm, LoginForm, HealthProfileForm, ChangePasswordForm
+from utils import admin_required
+
+# 导入蓝图
+from auth_routes import auth
+from herb_routes import herbs
+from appointment_routes import appointment
+from export_routes import export
+from knowledge_routes import knowledge
+from admin_routes import admin
+from article_routes import article
 
 # 配置上传文件
-UPLOAD_FOLDER = 'uploads'
-ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'doc', 'docx', 'mp3', 'wav', 'ogg'}
-MAX_FILE_SIZE = 16 * 1024 * 1024  # 16MB
-
-# 创建上传目录
+UPLOAD_FOLDER = os.path.join(os.getcwd(), 'static', 'uploads')
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
+ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'mp3', 'wav', 'ogg', 'doc', 'docx'}
 
-# 创建数据库
-def init_db():
-    conn = sqlite3.connect('tcm.db')
-    c = conn.cursor()
-    
-    # 创建诊断记录表
-    c.execute('''CREATE TABLE IF NOT EXISTS diagnosis_records
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  symptoms TEXT,
-                  diagnosis TEXT,
-                  prescription TEXT,
-                  timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
-    
-    # 创建处方记录表
-    c.execute('''CREATE TABLE IF NOT EXISTS prescription_records
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  herbs TEXT,
-                  dosage TEXT,
-                  usage TEXT,
-                  notes TEXT,
-                  timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
-    
-    conn.commit()
-    conn.close()
-
-# 初始化数据库
-init_db()
-
-# 禁用 SSL 警告
-urllib3.disable_warnings()
-
-# 加载环境变量
-load_dotenv()
-
+# 初始化Flask应用
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE
-app.secret_key = os.urandom(24)  # 设置 session 密钥
+app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100MB 上传限制
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your_secret_key_here')
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0  # 禁用缓存
+
+# 配置Flask-Login
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'auth.login'
+login_manager.login_message = '请先登录以访问此页面'
+login_manager.login_message_category = 'info'
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.get_by_id(int(user_id))
+
+# 注册蓝图
+app.register_blueprint(auth)
+app.register_blueprint(herbs)
+app.register_blueprint(appointment)
+app.register_blueprint(export)
+app.register_blueprint(knowledge)
+app.register_blueprint(admin)
+app.register_blueprint(article)
 
 # 从环境变量中获取API密钥
 api_key = os.environ.get("DEEPSEEKV3_API_KEY") or os.getenv("DEEPSEEKV3_API_KEY")
@@ -362,209 +359,246 @@ def process_audio_file(file_path):
 
 @app.route('/')
 def home():
-    # 为新用户创建会话ID和历史记录
+    # 为新用户创建会话ID
     if 'session_id' not in session:
         session['session_id'] = generate_session_id()
-        session['history'] = []
-    return render_template('index.html')
+    
+    # 根据用户是否登录，初始化不同的历史记录会话
+    session_key = f'chat_history_{current_user.id}' if current_user.is_authenticated else 'chat_history_guest'
+    if session_key not in session:
+        session[session_key] = []
+    
+    # 如果当前用户已认证，获取一些用户数据
+    user_data = None
+    if current_user.is_authenticated:
+        conn = sqlite3.connect('tcm.db')
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        # 获取用户诊断记录数量
+        cursor.execute("SELECT COUNT(*) FROM diagnosis_records WHERE user_id = ?", (current_user.id,))
+        records_count = cursor.fetchone()[0]
+        
+        # 获取用户预约数量
+        cursor.execute("SELECT COUNT(*) FROM appointments WHERE user_id = ?", (current_user.id,))
+        appointments_count = cursor.fetchone()[0]
+        
+        conn.close()
+        
+        user_data = {
+            'records_count': records_count,
+            'appointments_count': appointments_count
+        }
+    
+    return render_template('index.html', user_data=user_data)
 
 @app.route('/chat', methods=['POST'])
 def chat():
+    # 获取请求数据
+    user_message = request.json.get('message', '').strip()
+    symptoms = request.json.get('symptoms', [])
+    mode = request.json.get('mode', 'general')
+    files = request.json.get('files', [])
+    
+    # 如果用户消息为空，直接返回
+    if not user_message and not files:
+        return jsonify({
+            'status': 'error',
+            'message': '请输入您的问题或上传文件'
+        })
+    
+    # 获取会话ID和聊天历史
+    session_id = session.get('session_id', generate_session_id())
+    session['session_id'] = session_id
+    
+    # 根据用户是否登录，使用不同的会话键
+    session_key = f'chat_history_{current_user.id}' if current_user.is_authenticated else 'chat_history_guest'
+    
+    # 确保聊天历史存在
+    if session_key not in session:
+        session[session_key] = []
+    
+    chat_history = session.get(session_key, [])
+    
+    # 添加用户ID信息
+    user_id = current_user.id if current_user.is_authenticated else None
+    
+    # 处理文件上传的内容
+    uploaded_file_content = ""
+    if files:
+        for file in files:
+            file_type = file.get('type', '')
+            file_content = file.get('content', '')
+            if file_content:
+                uploaded_file_content += f"\n文件内容: {file_content}"
+    
+    # 生成系统提示
+    system_prompt = generate_system_prompt(symptoms, mode)
+    
+    # 构建API请求体
+    messages = []
+    
+    # 添加系统消息
+    messages.append({
+        "role": "system",
+        "content": system_prompt
+    })
+    
+    # 添加聊天历史
+    for msg in chat_history:
+        messages.append(msg)
+    
+    # 如果有上传的文件内容，添加到用户消息中
+    if uploaded_file_content:
+        user_content = f"{user_message}\n\n以下是上传的文件内容:{uploaded_file_content}"
+    else:
+        user_content = user_message
+    
+    # 添加新的用户消息
+    user_message_obj = {
+        "role": "user",
+        "content": user_content
+    }
+    messages.append(user_message_obj)
+    
+    # 将用户消息添加到历史记录
+    chat_history.append(user_message_obj)
+    
+    # 保存更新后的历史记录到会话中
+    session[session_key] = chat_history
+    
+    # API请求设置
+    url = "https://api.deepseek.com/v1/chat/completions"
+    
+    payload = {
+        "model": "deepseek-chat",
+        "messages": messages,
+        "stream": True,
+        "temperature": 0.7,
+        "max_tokens": 4000,
+        "user": session_id
+    }
+    
     try:
-        data = request.get_json()
-        message = data.get('message', '')
-        symptoms = data.get('symptoms', [])
-        mode = data.get('mode', 'default')
-        files = data.get('files', [])
-        
-        # 创建一个session_id，如果不存在则创建新的
-        session_id = session.get('session_id')
-        if not session_id:
-            session_id = generate_session_id()
-            session['session_id'] = session_id
-            session['history'] = []
-            
-        # 获取历史记录
-        history = session.get('history', [])
-        
-        # 检查是否有图片文件
-        has_image = any(file.get('type') == 'image' for file in files)
-        
-        # 构建消息历史
-        messages = [
-            {"role": "system", "content": generate_system_prompt(symptoms, mode)}
-        ]
-        
-        for item in history:
-            role = "user" if item["isUser"] else "assistant"
-            messages.append({"role": role, "content": item["content"]})
-        
-        # 构建当前用户消息
-        if has_image:
-            # 多模态消息（包含图片）
-            user_message = []
-            
-            # 添加文本部分
-            if message:
-                user_message.append({"type": "text", "text": message})
-            
-            # 添加文件内容
-            for file in files:
-                if file.get('type') == 'image':
-                    # 不再直接添加图片，而是添加OCR识别的文本
-                    if 'content' in file:
-                        if message:
-                            message += f"\n\n图片 {file.get('name', '')} 的识别内容：\n{file.get('content', '')}"
-                        else:
-                            message = f"图片 {file.get('name', '')} 的识别内容：\n{file.get('content', '')}"
-                        
-                        # 如果之前没有添加文本，现在添加
-                        if not any(item.get('type') == 'text' for item in user_message):
-                            user_message.append({"type": "text", "text": message})
-                        # 否则更新最后一个文本项
-                        else:
-                            for item in user_message:
-                                if item.get('type') == 'text':
-                                    item['text'] = message
-                                    break
-                else:
-                    # 添加其他类型文件的内容描述
-                    if message:
-                        message += f"\n\n{file.get('type', '文档')} {file.get('name', '')} 的内容：\n{file.get('content', '')}"
-                    else:
-                        message = f"{file.get('type', '文档')} {file.get('name', '')} 的内容：\n{file.get('content', '')}"
-                    
-                    # 如果之前没有添加文本，现在添加
-                    if not any(item.get('type') == 'text' for item in user_message):
-                        user_message.append({"type": "text", "text": message})
-                    # 否则更新最后一个文本项
-                    else:
-                        for item in user_message:
-                            if item.get('type') == 'text':
-                                item['text'] = message
-                                break
-            
-            # 添加当前用户输入
-            messages.append({"role": "user", "content": user_message})
-            
-            # 保存到历史记录的简化版本
-            history_content = message
-            for file in files:
-                if file.get('type') == 'image':
-                    history_content += f"\n[图片: {file.get('name', '未命名')}]"
-                else:
-                    history_content += f"\n[{file.get('type', '文档')}: {file.get('name', '未命名')}]"
-            
-            history.append({"isUser": True, "content": history_content, "timestamp": int(time.time() * 1000)})
-        else:
-            # 纯文本消息
-            user_input = message
-            
-            # 如果有文件内容，添加到用户输入中
-            if files:
-                user_input += "\n\n提供的文件内容："
-                for file in files:
-                    file_type = file.get('type', '文档')
-                    if file_type == 'audio':
-                        user_input += f"\n\n音频 {file.get('name', '')} 的转写内容：\n{file.get('content', '')}"
-                    else:
-                        user_input += f"\n\n{file_type} {file.get('name', '')} 的内容：\n{file.get('content', '')}"
-            
-            # 添加当前用户输入
-            messages.append({"role": "user", "content": user_input})
-            
-            # 添加用户消息到历史记录
-            history.append({"isUser": True, "content": user_input, "timestamp": int(time.time() * 1000)})
-        
-        session['history'] = history
-        
-        # 设置API请求
-        url = "https://api.deepseek.com/v1/chat/completions"
-        api_headers = {
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-            "Authorization": f"Bearer {api_key}"
-        }
-        
-        # 选择合适的模型 - 现在总是使用deepseek-chat，因为我们已经将图片转换为文本
-        model_name = "deepseek-chat"
-        
-        api_data = {
-            "model": model_name,
-            "messages": messages,
-            "temperature": 0.7,
-            "stream": True
-        }
-
-        # 创建具有重试机制的会话
-        req_session = requests.Session()
-        retries = Retry(total=3, backoff_factor=0.5, status_forcelist=[502, 503, 504])
-        req_session.mount('https://', TLSAdapter(max_retries=retries))
-        
-        # 创建响应
+        # 使用流式响应
         def generate():
-            try:
-                # 使用stream=True进行流式传输
-                resp = req_session.post(url, json=api_data, headers=api_headers, stream=True, timeout=60)
-                resp.raise_for_status()  # 确保请求成功
+            response = http_session.post(url, json=payload, headers=headers, stream=True, timeout=60)
+            
+            if response.status_code != 200:
+                error_message = f"API请求失败，状态码: {response.status_code}"
+                try:
+                    error_data = response.json()
+                    if 'error' in error_data and 'message' in error_data['error']:
+                        error_message += f", 错误信息: {error_data['error']['message']}"
+                except:
+                    pass
                 
-                buffer = ""
-                for line in resp.iter_lines():
-                    if line:
-                        line = line.decode('utf-8')
-                        if line.startswith('data: '):
-                            data_str = line[6:]  # 移除 "data: " 前缀
-                            if data_str.strip() == "[DONE]":
-                                break
+                print(error_message)
+                yield f"data: {json.dumps({'status': 'error', 'message': error_message})}\n\n"
+                return
+            
+            # 用于累积完整的AI回复
+            full_response = ""
+            
+            for line in response.iter_lines():
+                if line:
+                    line_text = line.decode('utf-8')
+                    
+                    # 跳过无关行
+                    if not line_text.startswith('data: '):
+                        continue
+                    
+                    # 提取JSON数据
+                    data_str = line_text[6:]  # 去除'data: '前缀
+                    
+                    # 处理特殊情况
+                    if data_str == '[DONE]':
+                        # 流式响应结束
+                        break
                             
-                            try:
-                                data_json = json.loads(data_str)
-                                if 'choices' in data_json and len(data_json['choices']) > 0:
-                                    delta = data_json['choices'][0].get('delta', {})
-                                    if 'content' in delta:
-                                        content = delta['content']
-                                        buffer += content
-                                        yield content
-                            except json.JSONDecodeError as e:
-                                print(f"JSON解析错误: {e}")
-                                continue
+                    try:
+                        data = json.loads(data_str)
+                        
+                        # 提取生成的内容增量
+                        if 'choices' in data and len(data['choices']) > 0:
+                            choice = data['choices'][0]
+                            if 'delta' in choice and 'content' in choice['delta']:
+                                content_delta = choice['delta']['content']
+                                full_response += content_delta
+                                yield f"data: {json.dumps({'status': 'success', 'message': content_delta, 'done': False})}\n\n"
+                            
+                            # 检查是否生成完成
+                            if choice.get('finish_reason') is not None:
+                                # 保存聊天历史
+                                ai_response_obj = {
+                                    "role": "assistant",
+                                    "content": full_response
+                                }
+                                chat_history.append(ai_response_obj)
+                                session[session_key] = chat_history
+                                # 确保更改被保存到会话
+                                session.modified = True
+                                
+                                # 保存诊断记录到数据库
+                                if mode == 'diagnosis' and current_user.is_authenticated:
+                                    conn = sqlite3.connect('tcm.db')
+                                    cursor = conn.cursor()
+                                    
+                                    cursor.execute(
+                                        """
+                                        INSERT INTO diagnosis_records 
+                                        (user_id, symptoms, diagnosis, prescription) 
+                                        VALUES (?, ?, ?, ?)
+                                        """,
+                                        (user_id, user_content, full_response, "")
+                                    )
+                                    
+                                    conn.commit()
+                                    record_id = cursor.lastrowid
+                                    conn.close()
+                                    
+                                    yield f"data: {json.dumps({'status': 'success', 'message': '', 'done': True, 'record_id': record_id})}\n\n"
+                                else:
+                                    yield f"data: {json.dumps({'status': 'success', 'message': '', 'done': True})}\n\n"
+                    except json.JSONDecodeError as e:
+                        print(f"JSON解析错误: {e}")
+                        continue
                 
-                # 添加AI回复到历史记录
-                if buffer:
-                    current_history = session.get('history', [])
-                    current_history.append({"isUser": False, "content": buffer, "timestamp": int(time.time() * 1000)})
-                    session['history'] = current_history
-                
-            except requests.exceptions.Timeout as e:
-                error_msg = f"API请求超时: {str(e)}"
-                print(error_msg)
-                yield error_msg
-            except requests.exceptions.ConnectionError as e:
-                error_msg = f"API连接错误: {str(e)}"
-                print(error_msg)
-                yield error_msg
-            except requests.exceptions.HTTPError as e:
-                error_msg = f"API HTTP错误: {str(e)}"
-                print(error_msg)
-                yield error_msg  
-            except Exception as e:
-                error_msg = f"API请求错误: {str(e)}"
-                print(error_msg)
-                yield error_msg
-        
-        return Response(generate(), mimetype='text/plain')
+        return Response(generate(), mimetype='text/event-stream')
     
     except Exception as e:
-        print(f"处理请求时出错: {str(e)}")
-        import traceback
-        traceback.print_exc()  # 打印完整的错误堆栈
-        return jsonify({'error': str(e)}), 500
+        print(f"出现异常: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'message': f'处理请求时出错: {str(e)}'
+        })
 
 @app.route('/clear', methods=['POST'])
 def clear_history():
     """清除对话历史"""
-    session['history'] = []
+    # 根据用户是否登录，使用不同的会话键
+    session_key = f'chat_history_{current_user.id}' if current_user.is_authenticated else 'chat_history_guest'
+    
+    # 清空对应的历史记录
+    session[session_key] = []
+    session.modified = True
     return jsonify({"status": "success"})
+
+@app.route('/api/chat_history', methods=['GET'])
+def get_chat_history():
+    """获取当前会话的聊天历史"""
+    # 根据用户是否登录，使用不同的会话键
+    session_key = f'chat_history_{current_user.id}' if current_user.is_authenticated else 'chat_history_guest'
+    
+    # 从会话中获取历史记录
+    chat_history = session.get(session_key, [])
+    
+    # 只返回用户和助手的消息，不返回系统提示
+    filtered_history = [msg for msg in chat_history if msg.get('role') in ['user', 'assistant']]
+    return jsonify({
+        "status": "success", 
+        "history": filtered_history
+    })
 
 @app.route('/api/records', methods=['GET'])
 def get_records():
@@ -650,37 +684,60 @@ def upload_file():
     
     return jsonify({'error': '不支持的文件类型'}), 400
 
+# 访问个人中心
+@app.route('/dashboard')
+@login_required
+def dashboard():
+    """用户个人中心"""
+    # 获取用户信息
+    user = current_user
+    
+    # 获取用户的预约和收藏数量
+    conn = sqlite3.connect('tcm.db')
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT COUNT(*) FROM appointments WHERE user_id = ?", (user.id,))
+    appointment_count = cursor.fetchone()[0] or 0
+    
+    # 获取收藏数量
+    cursor.execute("SELECT COUNT(*) FROM favorite_herbs WHERE user_id = ?", (user.id,))
+    favorite_herbs_count = cursor.fetchone()[0] or 0
+    
+    cursor.execute("SELECT COUNT(*) FROM favorite_formulas WHERE user_id = ?", (user.id,))
+    favorite_formulas_count = cursor.fetchone()[0] or 0
+    
+    favorites_count = favorite_herbs_count + favorite_formulas_count
+    
+    # 获取最近的预约
+    cursor.execute("""
+        SELECT * FROM appointments 
+        WHERE user_id = ? 
+        ORDER BY appointment_date DESC, appointment_time DESC LIMIT 5
+    """, (user.id,))
+    recent_appointments = cursor.fetchall()
+    
+    # 获取健康档案
+    cursor.execute("SELECT * FROM health_profiles WHERE user_id = ?", (user.id,))
+    health_profile = cursor.fetchone()
+    
+    # 获取医生信息用于显示预约医生姓名
+    cursor.execute("SELECT id, username FROM users WHERE role = 'doctor'")
+    doctors = {row[0]: row[1] for row in cursor.fetchall()}
+    
+    conn.close()
+    
+    return render_template('dashboard.html', 
+                          user=user,
+                          appointments=appointment_count,
+                          favorites=favorites_count,
+                          recent_appointments=recent_appointments,
+                          health_profile=health_profile,
+                          doctors=doctors)
+
+@app.route('/uploads/<path:filename>')
+def serve_upload(filename):
+    """提供上传文件的访问"""
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
 if __name__ == '__main__':
-    # 在生产环境中使用 gunicorn
-    if os.environ.get('FLASK_ENV') == 'production':
-        from gunicorn.app.base import BaseApplication
-
-        class StandaloneApplication(BaseApplication):
-            def __init__(self, app, options=None):
-                self.options = options or {}
-                self.application = app
-                super().__init__()
-
-            def load_config(self):
-                for key, value in self.options.items():
-                    if key in self.cfg.settings and value is not None:
-                        self.cfg.set(key, value)
-
-            def load(self):
-                return self.application
-
-        options = {
-            'bind': '0.0.0.0:5000',
-            'workers': 4,  # 建议设置为 CPU 核心数 * 2 + 1
-            'worker_class': 'sync',
-            'timeout': 120,
-            'keepalive': 5,
-            'errorlog': 'error.log',
-            'accesslog': 'access.log',
-            'loglevel': 'info'
-        }
-
-        StandaloneApplication(app, options).run()
-    else:
-        # 在开发环境中使用 Flask 开发服务器
         app.run(host='0.0.0.0', port=5000, debug=True) 

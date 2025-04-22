@@ -1,0 +1,276 @@
+{% extends "base.html" %}
+
+{% block title %}季节养生指南{% endblock %}
+
+{% block styles %}
+<style>
+    .seasonal-content {
+        line-height: 1.8;
+    }
+    .seasonal-content p {
+        margin-bottom: 1rem;
+    }
+    .seasonal-card {
+        border-radius: 12px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        border: none;
+    }
+    .seasonal-header {
+        background-color: rgba(40, 167, 69, 0.1);
+        border-bottom: 1px solid rgba(40, 167, 69, 0.1);
+    }
+    .season-badge {
+        font-size: 0.8rem;
+        padding: 5px 12px;
+        border-radius: 20px;
+        background-color: #e7f5e9;
+        color: #28a745;
+    }
+    .seasonal-img-container {
+        text-align: center;
+        background-color: #f8f9fa;
+        overflow: hidden;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    .seasonal-img {
+        height: 160px;
+        object-fit: contain;
+        max-width: 100%;
+        display: block;
+        margin: 0 auto;
+    }
+    .seasonal-img-placeholder {
+        height: 160px;
+        background: linear-gradient(135deg, #e6f7ea 0%, #f2f9f4 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .food-item, .exercise-item, .tip-item {
+        padding: 10px;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        background-color: #f8f9fa;
+        transition: transform 0.2s ease;
+    }
+    .food-item:hover, .exercise-item:hover, .tip-item:hover {
+        transform: translateY(-2px);
+        background-color: #e9f7ee;
+    }
+    .food-icon {
+        width: 40px;
+        height: 40px;
+        background-color: #f0fff3;
+        color: #28a745;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        margin-right: 15px;
+    }
+    .exercise-icon {
+        width: 40px;
+        height: 40px;
+        background-color: #f0f7ff;
+        color: #0d6efd;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        margin-right: 15px;
+    }
+    .tip-icon {
+        width: 40px;
+        height: 40px;
+        background-color: #fff8e8;
+        color: #ffc107;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        margin-right: 15px;
+    }
+    .season-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #28a745;
+        margin-bottom: 0;
+    }
+    .section-title {
+        position: relative;
+        padding-left: 15px;
+        margin-bottom: 20px;
+        font-weight: 600;
+        color: #2c3e50;
+    }
+    .section-title:before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 4px;
+        background-color: #28a745;
+        border-radius: 2px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <!-- 侧边导航 -->
+        <div class="col-lg-3 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-grid me-2"></i>功能导航
+                </div>
+                <div class="list-group list-group-flush sidebar-nav">
+                    <a href="{{ url_for('knowledge.articles_list') }}" class="list-group-item list-group-item-action">
+                        <i class="bi bi-journal-text me-2"></i>健康文章
+                    </a>
+                    <a href="{{ url_for('knowledge.seasonal_health') }}" class="list-group-item list-group-item-action active">
+                        <i class="bi bi-calendar3 me-2"></i>季节养生
+                    </a>
+                    <a href="{{ url_for('knowledge.video_tutorials') }}" class="list-group-item list-group-item-action">
+                        <i class="bi bi-play-circle me-2"></i>视频教程
+                    </a>
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-header">
+                    <i class="bi bi-cloud-sun me-2"></i>季节选择
+                </div>
+                <div class="card-body">
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for season in all_seasons %}
+                        <a href="{{ url_for('knowledge.seasonal_health', season=season) }}" class="badge rounded-pill {% if current_season == season %}bg-success{% else %}category-badge{% endif %} text-decoration-none px-3 py-2">
+                            {{ season }}
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 主要内容区 -->
+        <div class="col-lg-9">
+            {% if seasonal_health %}
+            <div class="card mb-4 seasonal-card">
+                <div class="card-header seasonal-header py-3 d-flex align-items-center">
+                    <h5 class="season-title mb-0">
+                        <i class="bi {% if current_season == '春季' %}bi-flower1{% elif current_season == '夏季' %}bi-sun{% elif current_season == '秋季' %}bi-tree{% else %}bi-snow{% endif %} me-2"></i>
+                        {{ current_season }}养生指南
+                    </h5>
+                    <span class="season-badge ms-auto">
+                        {{ current_season }}
+                    </span>
+                </div>
+                <div class="seasonal-img-container">
+                    {% if seasonal_health.image_url %}
+                    <img src="{{ seasonal_health.image_url }}" class="seasonal-img" alt="{{ current_season }}养生">
+                    {% else %}
+                    <div class="seasonal-img-placeholder">
+                        <i class="bi {% if current_season == '春季' %}bi-flower1{% elif current_season == '夏季' %}bi-sun{% elif current_season == '秋季' %}bi-tree{% else %}bi-snow{% endif %} text-success" style="font-size: 5rem;"></i>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title mb-4">{{ seasonal_health.title }}</h5>
+                    <div class="mt-4">
+                        <div class="seasonal-content">
+                            {{ seasonal_health.content | safe }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 饮食建议 -->
+            {% if seasonal_health.foods %}
+            <div class="card mb-4 seasonal-card">
+                <div class="card-header seasonal-header py-3">
+                    <h5 class="section-title mb-0">
+                        推荐饮食
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for food in seasonal_health.foods.split('；') %}
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex align-items-center food-item">
+                                <div class="food-icon">
+                                    <i class="bi bi-cup-hot"></i>
+                                </div>
+                                <span>{{ food.strip() }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- 运动养生 -->
+            {% if seasonal_health.exercises %}
+            <div class="card mb-4 seasonal-card">
+                <div class="card-header seasonal-header py-3">
+                    <h5 class="section-title mb-0">
+                        推荐运动
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for exercise in seasonal_health.exercises.split('；') %}
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex align-items-center exercise-item">
+                                <div class="exercise-icon">
+                                    <i class="bi bi-person-walking"></i>
+                                </div>
+                                <span>{{ exercise.strip() }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- 生活小贴士 -->
+            {% if seasonal_health.tips %}
+            <div class="card seasonal-card">
+                <div class="card-header seasonal-header py-3">
+                    <h5 class="section-title mb-0">
+                        生活小贴士
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for tip in seasonal_health.tips.split('；') %}
+                        {% if tip.strip() %}
+                        <div class="col-12 mb-3">
+                            <div class="d-flex tip-item">
+                                <div class="tip-icon">
+                                    <i class="bi bi-lightbulb"></i>
+                                </div>
+                                <div class="align-self-center">{{ tip.strip() }}</div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            {% else %}
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>暂无{{ current_season }}养生指南数据。
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

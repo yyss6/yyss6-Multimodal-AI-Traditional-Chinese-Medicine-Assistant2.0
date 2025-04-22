@@ -1,0 +1,44 @@
+/* 管理系统侧边栏样式 */
+:root {
+    --primary-color: #5b4636;
+    --border-color: rgba(91, 70, 54, 0.2);
+}
+
+.menu-sidebar {
+    background-color: rgba(244, 241, 234, 0.9);
+    border-right: 1px solid var(--border-color);
+    min-height: calc(100vh - 72px);
+    padding-top: 1rem;
+}
+
+.sidebar-menu {
+    list-style: none;
+    padding: 0;
+}
+
+.sidebar-menu li {
+    margin-bottom: 1.2rem; /* 增加行间距 */
+}
+
+.sidebar-menu a {
+    display: block;
+    padding: 0.9rem 1rem; /* 增加内边距 */
+    color: var(--primary-color);
+    border-radius: 5px;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    font-size: 1.15rem; /* 增加字体大小 */
+    font-weight: 500; /* 增加字体粗细 */
+}
+
+.sidebar-menu a:hover, .sidebar-menu a.active {
+    background-color: rgba(212, 176, 114, 0.2);
+    padding-left: 1.5rem;
+}
+
+.sidebar-menu i {
+    margin-right: 0.8rem; /* 增加图标和文字间距 */
+    width: 24px; /* 增加图标尺寸 */
+    text-align: center;
+    font-size: 1.2rem; /* 增加图标大小 */
+} 

@@ -1,0 +1,274 @@
+{% extends "base.html" %}
+
+{% block title %}中药管理{% endblock %}
+
+{% block additional_styles %}
+<style>
+    .menu-sidebar {
+        background-color: rgba(244, 241, 234, 0.9);
+        border-right: 1px solid var(--border-color);
+        min-height: calc(100vh - 72px);
+        padding-top: 1rem;
+    }
+    
+    .sidebar-menu {
+        list-style: none;
+        padding: 0;
+    }
+    
+    .sidebar-menu li {
+        margin-bottom: 0.5rem;
+    }
+    
+    .sidebar-menu a {
+        display: block;
+        padding: 0.75rem 1rem;
+        color: var(--primary-color);
+        border-radius: 5px;
+        transition: all 0.3s ease;
+        text-decoration: none;
+    }
+    
+    .sidebar-menu a:hover, .sidebar-menu a.active {
+        background-color: rgba(212, 176, 114, 0.2);
+        padding-left: 1.5rem;
+    }
+    
+    .sidebar-menu i {
+        margin-right: 0.5rem;
+        width: 20px;
+        text-align: center;
+    }
+    
+    .table-responsive {
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    }
+    
+    .table {
+        margin-bottom: 0;
+    }
+    
+    .table th {
+        background-color: rgba(212, 176, 114, 0.2);
+        border: none;
+        color: var(--primary-color);
+    }
+    
+    .table td {
+        vertical-align: middle;
+        border-color: rgba(212, 176, 114, 0.1);
+    }
+    
+    .table tr:hover {
+        background-color: rgba(244, 241, 234, 0.5);
+    }
+    
+    .action-btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.8rem;
+        margin: 0 0.2rem;
+    }
+    
+    .page-item.active .page-link {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+    
+    .page-link {
+        color: var(--primary-color);
+    }
+    
+    .form-control:focus {
+        border-color: rgba(212, 176, 114, 0.5);
+        box-shadow: 0 0 0 0.2rem rgba(212, 176, 114, 0.25);
+    }
+    
+    .category-badge {
+        background-color: rgba(212, 176, 114, 0.2);
+        color: var(--primary-color);
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 10px;
+    }
+    
+    .action-col {
+        width: 150px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- 侧边栏菜单 -->
+        <div class="col-md-2 menu-sidebar">
+            <h5 class="text-center mb-4"><i class="bi bi-gear-fill me-2"></i>管理菜单</h5>
+            <ul class="sidebar-menu">
+                <li><a href="{{ url_for('admin.dashboard') }}"><i class="bi bi-speedometer2"></i>控制面板</a></li>
+                <li><a href="{{ url_for('admin.manage_herbs') }}" class="active"><i class="bi bi-flower1"></i>中药管理</a></li>
+                <li><a href="{{ url_for('admin.formulas') }}"><i class="bi bi-journal-medical"></i>方剂管理</a></li>
+                <li><a href="{{ url_for('admin.manage_articles') }}"><i class="bi bi-file-earmark-text"></i>文章管理</a></li>
+                <li><a href="{{ url_for('admin.manage_videos') }}"><i class="bi bi-camera-video"></i>视频管理</a></li>
+                <li><a href="{{ url_for('admin.manage_users') }}"><i class="bi bi-people"></i>用户管理</a></li>
+                <li><a href="{{ url_for('home') }}"><i class="bi bi-house-door"></i>返回首页</a></li>
+            </ul>
+        </div>
+        
+        <!-- 主要内容区 -->
+        <div class="col-md-10 p-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="bi bi-flower1 me-2"></i>中药管理</h2>
+                <a href="{{ url_for('admin.add_herb') }}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle me-1"></i>添加中药
+                </a>
+            </div>
+            
+            <!-- 搜索和过滤 -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form method="get" action="{{ url_for('admin.manage_herbs') }}" class="row g-3">
+                        <div class="col-md-4">
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                <input type="text" class="form-control" name="search" placeholder="搜索中药名称、拼音、功效..." value="{{ request.args.get('search', '') }}">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" name="category">
+                                <option value="">全部分类</option>
+                                {% for category in categories %}
+                                <option value="{{ category }}" {% if request.args.get('category') == category %}selected{% endif %}>{{ category }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" name="property">
+                                <option value="">全部药性</option>
+                                <option value="温" {% if request.args.get('property') == '温' %}selected{% endif %}>温</option>
+                                <option value="凉" {% if request.args.get('property') == '凉' %}selected{% endif %}>凉</option>
+                                <option value="寒" {% if request.args.get('property') == '寒' %}selected{% endif %}>寒</option>
+                                <option value="热" {% if request.args.get('property') == '热' %}selected{% endif %}>热</option>
+                                <option value="平" {% if request.args.get('property') == '平' %}selected{% endif %}>平</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-primary w-100">筛选</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- 中药列表 -->
+            <div class="card">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>中药名称</th>
+                                    <th>分类</th>
+                                    <th>药性</th>
+                                    <th>功效</th>
+                                    <th class="action-col">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for herb in herbs %}
+                                <tr>
+                                    <td>{{ herb.id }}</td>
+                                    <td>
+                                        <div class="fw-bold">{{ herb.name }}</div>
+                                        <small class="text-muted">{{ herb.pinyin }}</small>
+                                    </td>
+                                    <td><span class="category-badge">{{ herb.category }}</span></td>
+                                    <td>{{ herb.property }}</td>
+                                    <td>{{ herb.functions[:50] }}{% if herb.functions|length > 50 %}...{% endif %}</td>
+                                    <td>
+                                        <a href="{{ url_for('admin.view_herb', herb_id=herb.id) }}" class="btn btn-sm btn-outline-info action-btn">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a href="{{ url_for('admin.edit_herb', herb_id=herb.id) }}" class="btn btn-sm btn-outline-primary action-btn">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-outline-danger action-btn" 
+                                                onclick="confirmDelete('{{ url_for('admin.delete_herb', herb_id=herb.id) }}', '{{ herb.name }}')">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-4">
+                                        <div class="text-muted">
+                                            <i class="bi bi-info-circle me-2"></i>暂无中药数据
+                                        </div>
+                                        <a href="{{ url_for('admin.add_herb') }}" class="btn btn-sm btn-primary mt-2">
+                                            <i class="bi bi-plus-circle me-1"></i>添加中药
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                {% if total_pages > 1 %}
+                <div class="card-footer">
+                    <nav>
+                        <ul class="pagination justify-content-center mb-0">
+                            <li class="page-item {% if page == 1 %}disabled{% endif %}">
+                                <a class="page-link" href="{{ url_for('admin.manage_herbs', page=page-1, search=request.args.get('search', ''), category=request.args.get('category', ''), property=request.args.get('property', '')) }}">上一页</a>
+                            </li>
+                            
+                            {% for p in range(1, total_pages + 1) %}
+                            <li class="page-item {% if p == page %}active{% endif %}">
+                                <a class="page-link" href="{{ url_for('admin.manage_herbs', page=p, search=request.args.get('search', ''), category=request.args.get('category', ''), property=request.args.get('property', '')) }}">{{ p }}</a>
+                            </li>
+                            {% endfor %}
+                            
+                            <li class="page-item {% if page == total_pages %}disabled{% endif %}">
+                                <a class="page-link" href="{{ url_for('admin.manage_herbs', page=page+1, search=request.args.get('search', ''), category=request.args.get('category', ''), property=request.args.get('property', '')) }}">下一页</a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 删除确认模态框 -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">确认删除</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                您确定要删除 <span id="deleteItemName" class="fw-bold"></span> 吗？此操作不可逆。
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <a href="#" id="confirmDeleteBtn" class="btn btn-danger">确认删除</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function confirmDelete(deleteUrl, itemName) {
+        document.getElementById('deleteItemName').textContent = itemName;
+        document.getElementById('confirmDeleteBtn').href = deleteUrl;
+        new bootstrap.Modal(document.getElementById('deleteModal')).show();
+    }
+</script>
+{% endblock %} 

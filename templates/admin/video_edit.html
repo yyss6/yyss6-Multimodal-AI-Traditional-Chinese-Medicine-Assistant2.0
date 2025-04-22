@@ -1,0 +1,332 @@
+{% extends "base.html" %}
+
+{% block title %}编辑视频教程{% endblock %}
+
+{% block styles %}
+<style>
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    .required-label::after {
+        content: " *";
+        color: #dc3545;
+    }
+    .preview-container {
+        margin-top: 10px;
+        width: 100%;
+        max-width: 320px;
+        height: 180px;
+        border-radius: 8px;
+        overflow: hidden;
+        position: relative;
+        background-color: #f8f9fa;
+        border: 1px dashed #ced4da;
+    }
+    .preview-placeholder {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: #6c757d;
+    }
+    .preview-placeholder i {
+        font-size: 2rem;
+        margin-bottom: 10px;
+    }
+    #thumbnail-preview {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .thumbnail-controls {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        padding: 8px;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: none;
+        justify-content: center;
+    }
+    .preview-container:hover .thumbnail-controls {
+        display: flex;
+    }
+    .category-suggestions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 10px;
+    }
+    .category-tag {
+        background-color: rgba(40, 167, 69, 0.1);
+        color: #28a745;
+        border: 1px solid rgba(40, 167, 69, 0.2);
+        border-radius: 20px;
+        padding: 5px 12px;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .category-tag:hover {
+        background-color: rgba(40, 167, 69, 0.2);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0"><i class="bi bi-pencil-square me-2"></i>编辑视频教程</h4>
+                </div>
+                <div class="card-body">
+                    <!-- 提示消息 -->
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                    
+                    <form action="{{ url_for('admin.edit_video', video_id=video.id) }}" method="post" enctype="multipart/form-data">
+                        <!-- 基本信息 -->
+                        <div class="form-group">
+                            <label for="title" class="form-label required-label">视频标题</label>
+                            <input type="text" id="title" name="title" class="form-control" value="{{ video.title }}" required>
+                            <div class="form-text">简洁明了的标题有助于用户快速了解视频内容</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="description" class="form-label">视频描述</label>
+                            <textarea id="description" name="description" class="form-control" rows="4">{{ video.description }}</textarea>
+                            <div class="form-text">详细介绍视频的内容、适用人群和学习收获</div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="category" class="form-label">分类</label>
+                                    <input type="text" id="category" name="category" class="form-control" value="{{ video.category }}" list="category-list">
+                                    <datalist id="category-list">
+                                        <option value="经络养生">
+                                        <option value="饮食养生">
+                                        <option value="运动养生">
+                                        <option value="穴位按摩">
+                                        <option value="中医理论">
+                                        <option value="药膳食疗">
+                                        <option value="养生功法">
+                                    </datalist>
+                                    <div class="category-suggestions">
+                                        <span class="category-tag" onclick="document.getElementById('category').value='经络养生'">经络养生</span>
+                                        <span class="category-tag" onclick="document.getElementById('category').value='饮食养生'">饮食养生</span>
+                                        <span class="category-tag" onclick="document.getElementById('category').value='穴位按摩'">穴位按摩</span>
+                                        <span class="category-tag" onclick="document.getElementById('category').value='养生功法'">养生功法</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="instructor" class="form-label">讲师</label>
+                                    <input type="text" id="instructor" name="instructor" class="form-control" value="{{ video.instructor }}">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="duration" class="form-label">视频时长</label>
+                                    <input type="text" id="duration" name="duration" class="form-control" value="{{ video.duration }}" placeholder="例如: 15:30">
+                                    <div class="form-text">格式：分钟:秒，例如 15:30 表示15分30秒</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="view_count" class="form-label">浏览量</label>
+                                    <input type="text" id="view_count" class="form-control" value="{{ video.view_count }}" readonly>
+                                    <div class="form-text">该统计数据为只读</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 视频设置 -->
+                        <h5 class="mt-4 mb-3"><i class="bi bi-film me-2"></i>视频设置</h5>
+                        
+                        <div class="form-group">
+                            <label for="video_url" class="form-label">视频链接</label>
+                            <input type="text" id="video_url" name="video_url" class="form-control" value="{{ video.video_url }}" placeholder="输入视频URL或上传视频文件">
+                            <div class="form-text">支持外部视频链接或上传视频文件</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="video" class="form-label">上传新视频</label>
+                            <input type="file" id="video" name="video" class="form-control" accept="video/*">
+                            <div class="form-text">上传新视频将替换当前视频，支持的格式：MP4, WebM, Ogg等</div>
+                        </div>
+                        
+                        {% if video.video_url %}
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>当前视频: <a href="{{ video.video_url }}" target="_blank">{{ video.video_url }}</a>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- 缩略图设置 -->
+                        <h5 class="mt-4 mb-3"><i class="bi bi-image me-2"></i>缩略图设置</h5>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="thumbnail_url" class="form-label">缩略图链接</label>
+                                    <input type="text" id="thumbnail_url" name="thumbnail_url" class="form-control" value="{{ video.thumbnail_url }}" placeholder="输入图片URL或上传图片">
+                                </div>
+                                
+                                <div class="form-group mt-3">
+                                    <label for="thumbnail" class="form-label">上传新缩略图</label>
+                                    <input type="file" id="thumbnail" name="thumbnail" class="form-control" accept="image/*" onchange="previewThumbnail(this)">
+                                    <div class="form-text">上传新图片将替换当前缩略图，建议尺寸：16:9比例</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">缩略图预览</label>
+                                <div class="preview-container">
+                                    {% if video.thumbnail_url %}
+                                    <img id="thumbnail-preview" src="{{ video.thumbnail_url }}" alt="缩略图预览">
+                                    {% else %}
+                                    <div class="preview-placeholder">
+                                        <i class="bi bi-image"></i>
+                                        <span>无缩略图</span>
+                                    </div>
+                                    <img id="thumbnail-preview" src="#" alt="缩略图预览" style="display: none;">
+                                    {% endif %}
+                                    <div class="thumbnail-controls">
+                                        <button type="button" class="btn btn-sm btn-outline-light" onclick="clearThumbnail()">
+                                            <i class="bi bi-x-circle me-1"></i>清除
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 表单按钮 -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{{ url_for('admin.manage_videos') }}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left me-1"></i>返回列表
+                            </a>
+                            <div>
+                                <button type="button" class="btn btn-danger me-2" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                                    <i class="bi bi-trash me-1"></i>删除视频
+                                </button>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="bi bi-check2-circle me-1"></i>保存更改
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 删除确认模态框 -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">确认删除</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>确定要删除视频 <strong>{{ video.title }}</strong> 吗？此操作不可撤销。</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <form action="{{ url_for('admin.delete_video', video_id=video.id) }}" method="post">
+                    <button type="submit" class="btn btn-danger">确认删除</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // 缩略图预览功能
+    function previewThumbnail(input) {
+        const preview = document.getElementById('thumbnail-preview');
+        const placeholder = document.querySelector('.preview-placeholder');
+        
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+                if (placeholder) {
+                    placeholder.style.display = 'none';
+                }
+            }
+            
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+    
+    // 清除缩略图
+    function clearThumbnail() {
+        const preview = document.getElementById('thumbnail-preview');
+        const placeholder = document.querySelector('.preview-placeholder');
+        const input = document.getElementById('thumbnail');
+        const urlInput = document.getElementById('thumbnail_url');
+        
+        preview.src = '#';
+        preview.style.display = 'none';
+        urlInput.value = '';
+        input.value = '';
+        
+        if (!placeholder) {
+            // 如果没有placeholder，创建一个
+            const container = document.querySelector('.preview-container');
+            const newPlaceholder = document.createElement('div');
+            newPlaceholder.className = 'preview-placeholder';
+            newPlaceholder.innerHTML = '<i class="bi bi-image"></i><span>无缩略图</span>';
+            container.insertBefore(newPlaceholder, preview);
+        } else {
+            placeholder.style.display = 'flex';
+        }
+    }
+    
+    // URL输入同步预览
+    document.getElementById('thumbnail_url').addEventListener('input', function() {
+        const url = this.value.trim();
+        const preview = document.getElementById('thumbnail-preview');
+        const placeholder = document.querySelector('.preview-placeholder');
+        
+        if (url) {
+            preview.src = url;
+            preview.style.display = 'block';
+            if (placeholder) {
+                placeholder.style.display = 'none';
+            }
+            
+            // 处理图片加载错误
+            preview.onerror = function() {
+                preview.style.display = 'none';
+                if (placeholder) {
+                    placeholder.style.display = 'flex';
+                }
+            };
+        } else {
+            clearThumbnail();
+        }
+    });
+</script>
+{% endblock %} 

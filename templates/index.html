@@ -3,25 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 中医助手 - 水墨风格</title>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&display=swap">
+    <title>AI 中医助手 - 传统中医风格</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/highlight.js@10.7.2/lib/highlight.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.7.2/build/highlight.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@10.7.2/styles/github.min.css">
+    <script src="/static/highlight-custom.js"></script>
     <script src="/static/handleFileUpload.js"></script>
     <style>
         :root {
-            --primary-color: #0a192f;
-            --secondary-color: #64ffda;
-            --background-color: #0a192f;
-            --text-color: #8892b0;
-            --border-color: #64ffda;
-            --panel-bg: rgba(10, 25, 47, 0.95);
+            --primary-color: #5b4636;      /* 深棕色 - 传统中药色 */
+            --secondary-color: #d4b072;    /* 黄芪色 */
+            --background-color: #f4f1ea;   /* 米色纸张色 */
+            --text-color: #3c3028;         /* 暗褐色 */
+            --border-color: #8c7b6b;       /* 淡棕色边框 */
+            --panel-bg: rgba(91, 70, 54, 0.95);
             --spacing: 20px;
             --border-radius: 8px;
-            --glow-shadow: 0 0 10px rgba(100, 255, 218, 0.2);
-            --hexagon-color: rgba(100, 255, 218, 0.1);
+            --glow-shadow: 0 0 10px rgba(212, 176, 114, 0.3);
+            --accent-color: #a74036;       /* 朱砂红色 - 印章颜色 */
+            --success-color: #57734a;      /* 中药草绿色 */
         }
 
         body {
@@ -35,7 +37,7 @@
             overflow-x: hidden;
         }
 
-        /* 六边形背景 */
+        /* 背景纹理 */
         body::before {
             content: '';
             position: fixed;
@@ -48,14 +50,122 @@
             background-position: center;
             background-repeat: no-repeat;
             z-index: -1;
-            opacity: 0.95;
+            opacity: 0.15;
+        }
+
+        /* 页面装饰边框 */
+        .page-border {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 9999;
+            border: 2px solid var(--border-color);
+            box-sizing: border-box;
+        }
+
+        /* 导航栏样式 */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--primary-color);
+            padding: 15px 30px;
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: var(--glow-shadow);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .navbar-brand {
+            color: var(--background-color);
+            font-size: 24px;
+            font-weight: bold;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .navbar-brand i {
+            margin-right: 10px;
+            color: var(--secondary-color);
+        }
+
+        .navbar-nav {
+            display: flex;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .nav-item {
+            margin-left: 20px;
+        }
+
+        .nav-link {
+            color: var(--background-color);
+            text-decoration: none;
+            padding: 8px 15px;
+            border-radius: var(--border-radius);
+            transition: all 0.3s ease;
+            font-size: 16px;
+        }
+
+        .nav-link:hover {
+            color: var(--secondary-color);
+            background-color: rgba(212, 176, 114, 0.1);
+        }
+
+        .nav-link.active {
+            color: var(--secondary-color);
+            border: 1px solid var(--secondary-color);
+        }
+
+        .login-register {
+            display: flex;
+            align-items: center;
+        }
+
+        .login-btn, .register-btn {
+            padding: 8px 20px;
+            border-radius: var(--border-radius);
+            transition: all 0.3s ease;
+            text-decoration: none;
+            font-weight: 500;
+            margin-left: 10px;
+        }
+
+        .login-btn {
+            color: var(--secondary-color);
+            border: 1px solid var(--secondary-color);
+            background: transparent;
+        }
+
+        .register-btn {
+            color: var(--primary-color);
+            background-color: var(--secondary-color);
+            border: 1px solid var(--secondary-color);
+        }
+
+        .login-btn:hover {
+            background-color: rgba(212, 176, 114, 0.1);
+            box-shadow: var(--glow-shadow);
+        }
+
+        .register-btn:hover {
+            box-shadow: var(--glow-shadow);
+            background-color: rgba(212, 176, 114, 0.9);
         }
 
         .chat-container {
             max-width: 1200px;
             margin: 20px auto;
             padding: 20px;
-            background: rgba(10, 25, 47, 0.85);
+            background: rgba(244, 241, 234, 0.95); 
             border-radius: var(--border-radius);
             box-shadow: var(--glow-shadow);
             border: 1px solid var(--border-color);
@@ -87,13 +197,14 @@
             text-shadow: 0 0 10px rgba(100, 255, 218, 0.3);
         }
 
+        /* 控制面板样式 */
         .control-panel {
             display: grid;
             grid-template-columns: 1fr 2fr 1fr 1fr 1fr;
             gap: var(--spacing);
             margin-bottom: var(--spacing);
             padding: var(--spacing);
-            background: rgba(10, 25, 47, 0.8);
+            background: rgba(244, 241, 234, 0.9); 
             border-radius: var(--border-radius);
             border: 1px solid var(--border-color);
             box-shadow: var(--glow-shadow);
@@ -102,10 +213,10 @@
         .symptom-selector select {
             width: 100%;
             padding: 10px;
-            background: rgba(10, 25, 47, 0.8);
+            background: rgba(244, 241, 234, 0.9); 
             border: 1px solid var(--border-color);
             border-radius: var(--border-radius);
-            color: var(--secondary-color);
+            color: var(--primary-color);
             font-family: 'Noto Serif SC', serif;
             font-size: 16px;
             outline: none;
@@ -113,7 +224,7 @@
         }
 
         .symptom-selector select:focus {
-            border-color: var(--border-color);
+            border-color: var(--secondary-color);
             box-shadow: var(--glow-shadow);
         }
 
@@ -123,15 +234,16 @@
         }
 
         .mode-btn {
-            background: transparent;
+            background: rgba(244, 241, 234, 0.9);
             border: 1px solid var(--border-color);
-            color: var(--secondary-color);
+            color: var(--primary-color);
             padding: 10px;
             border-radius: var(--border-radius);
             cursor: pointer;
             transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
+            font-family: 'Noto Serif SC', serif;
         }
 
         .mode-btn:hover {
@@ -149,8 +261,8 @@
         .records-btn, .prescriptions-btn {
             padding: 10px;
             border: 1px solid var(--border-color);
-            background: transparent;
-            color: var(--text-color);
+            background: rgba(244, 241, 234, 0.9);
+            color: var(--primary-color);
             border-radius: var(--border-radius);
             cursor: pointer;
             transition: all 0.3s ease;
@@ -166,7 +278,9 @@
             height: 500px;
             overflow-y: auto;
             padding: var(--spacing);
-            background: rgba(10, 25, 47, 0.8);
+            background: rgba(244, 241, 234, 0.8);
+            background-image: url('/static/textures/paper_texture.jpg');
+            background-blend-mode: overlay;
             border-radius: var(--border-radius);
             border: 1px solid var(--border-color);
             margin-bottom: var(--spacing);
@@ -197,29 +311,32 @@
         }
 
         .user-message {
-            background: rgba(100, 255, 218, 0.1);
-            color: var(--secondary-color);
+            background: rgba(212, 176, 114, 0.15);
+            color: var(--primary-color);
             margin-left: auto;
             box-shadow: var(--glow-shadow);
+            border: 1px solid rgba(212, 176, 114, 0.4);
         }
 
         .ai-message {
-            background: rgba(10, 25, 47, 0.8);
-            color: var(--text-color);
+            background: rgba(244, 241, 234, 0.9);
+            color: var(--primary-color);
             margin-right: auto;
             box-shadow: var(--glow-shadow);
+            border-left: 3px solid var(--accent-color);
         }
 
         .input-container {
             display: flex;
             gap: 10px;
             margin-top: 10px;
-            background: var(--panel-bg);
+            background: rgba(244, 241, 234, 0.9);
             border-radius: var(--border-radius);
             padding: 15px;
             box-shadow: var(--glow-shadow);
             position: relative;
             transition: all 0.3s ease;
+            border: 1px solid var(--border-color);
         }
 
         .input-container::before {
@@ -229,7 +346,7 @@
             left: 50%;
             transform: translateX(-50%);
             font-size: 0.9em;
-            color: var(--secondary-color);
+            color: var(--primary-color);
             opacity: 0.7;
             white-space: nowrap;
             pointer-events: none;
@@ -239,27 +356,30 @@
             opacity: 1;
         }
 
-        #user-input {
+        #message-input {
             flex: 1;
             padding: 15px;
-            background: rgba(10, 25, 47, 0.8);
+            background: rgba(244, 241, 234, 0.8);
             border: 1px solid var(--border-color);
             border-radius: var(--border-radius);
-            color: var(--secondary-color);
+            color: var(--primary-color);
             font-size: 16px;
+            font-family: 'Noto Serif SC', serif;
             outline: none;
             transition: all 0.3s ease;
+            resize: none;
         }
 
-        #user-input:focus {
+        #message-input:focus {
             box-shadow: var(--glow-shadow);
+            border-color: var(--secondary-color);
         }
 
         .send-btn {
             padding: 15px 30px;
-            background: transparent;
+            background: var(--primary-color);
             border: 1px solid var(--border-color);
-            color: var(--secondary-color);
+            color: var(--background-color);
             border-radius: var(--border-radius);
             cursor: pointer;
             transition: all 0.3s ease;
@@ -274,7 +394,7 @@
         .typing-indicator {
             display: none;
             padding: 10px;
-            background: rgba(10, 25, 47, 0.8);
+            background: rgba(244, 241, 234, 0.8);
             border-radius: var(--border-radius);
             margin-bottom: 10px;
             border: 1px solid var(--border-color);
@@ -302,7 +422,7 @@
             top: 10px;
             background: transparent;
             border: 1px solid var(--border-color);
-            color: var(--text-color);
+            color: var(--primary-color);
             padding: 5px 10px;
             border-radius: var(--border-radius);
             cursor: pointer;
@@ -332,7 +452,7 @@
         }
 
         ::-webkit-scrollbar-track {
-            background: rgba(100, 255, 218, 0.1);
+            background: rgba(212, 176, 114, 0.1);
             border-radius: 4px;
         }
 
@@ -348,13 +468,13 @@
         /* 动画效果 */
         @keyframes glow {
             0% { box-shadow: 0 0 5px var(--secondary-color); }
-            50% { box-shadow: 0 0 20px var(--secondary-color); }
+            50% { box-shadow: 0 0 15px var(--secondary-color); }
             100% { box-shadow: 0 0 5px var(--secondary-color); }
         }
 
         @keyframes pulse {
             0% { transform: scale(1); opacity: 0.4; }
-            50% { transform: scale(1.2); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 1; }
             100% { transform: scale(1); opacity: 0.4; }
         }
 
@@ -364,9 +484,9 @@
 
         /* 语音控制按钮 */
         .voice-control-btn {
-            background: transparent;
+            background: rgba(244, 241, 234, 0.9);
             border: 1px solid var(--border-color);
-            color: var(--secondary-color);
+            color: var(--primary-color);
             padding: 10px 15px;
             border-radius: var(--border-radius);
             cursor: pointer;
@@ -374,6 +494,7 @@
             align-items: center;
             gap: 5px;
             transition: all 0.3s ease;
+            font-family: 'Noto Serif SC', serif;
         }
 
         .voice-control-btn:hover {
@@ -390,25 +511,34 @@
         /* 历史记录面板 */
         .history-panel {
             position: fixed;
-            right: -400px;
+            right: -500px;
             top: 0;
             width: 400px;
             height: 100vh;
-            background: var(--panel-bg);
+            background: rgba(244, 241, 234, 0.95);
             border-left: 1px solid var(--border-color);
-            transition: right 0.3s ease;
+            transition: right 0.3s ease, visibility 0.3s ease, opacity 0.3s ease;
             padding: 20px;
-            box-shadow: var(--glow-shadow);
+            box-shadow: -3px 0 10px rgba(0, 0, 0, 0.1);
             backdrop-filter: blur(10px);
+            z-index: 1000;
+            visibility: hidden;
+            opacity: 0;
+            overflow-y: auto;
         }
 
         .history-panel.active {
             right: 0;
+            visibility: visible;
+            opacity: 1;
         }
 
         .history-panel h2 {
-            color: var(--secondary-color);
+            color: var(--primary-color);
             margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 600;
         }
 
         .history-item {
@@ -416,24 +546,25 @@
             padding: 15px;
             margin-bottom: 15px;
             border-radius: var(--border-radius);
-            background: rgba(10, 25, 47, 0.8);
+            background: rgba(244, 241, 234, 0.8);
             cursor: pointer;
             transition: all 0.3s ease;
+            color: var(--primary-color);
         }
 
         .history-item:hover {
-            background: var(--secondary-color);
+            background: rgba(212, 176, 114, 0.2);
             color: var(--primary-color);
             box-shadow: var(--glow-shadow);
         }
 
         .history-item .timestamp {
             font-size: 0.8em;
-            color: #666;
+            color: var(--border-color);
         }
 
         .history-item:hover .timestamp {
-            color: #eee;
+            color: var(--primary-color);
         }
 
         .tools-container {
@@ -443,9 +574,9 @@
         }
 
         .tool-btn {
-            background: transparent;
+            background: rgba(244, 241, 234, 0.9);
             border: 1px solid var(--border-color);
-            color: var(--secondary-color);
+            color: var(--primary-color);
             padding: 10px 20px;
             border-radius: var(--border-radius);
             cursor: pointer;
@@ -453,6 +584,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            font-family: 'Noto Serif SC', serif;
         }
 
         .tool-btn:hover {
@@ -463,237 +595,55 @@
 
         .tool-btn i {
             font-size: 18px;
+            color: var(--accent-color);
         }
 
-        .records-panel {
-            position: fixed;
-            right: -400px;
-            top: 0;
-            width: 400px;
-            height: 100vh;
-            background: var(--panel-bg);
-            border-left: 1px solid var(--border-color);
-            transition: right 0.3s ease;
-            padding: 20px;
-            box-shadow: var(--glow-shadow);
-            overflow-y: auto;
+        .tool-btn:hover i {
+            color: var(--primary-color);
         }
 
-        .records-panel.active {
-            right: 0;
-        }
-
-        .record-item {
+        .record-item, .prescription-item {
             border: 1px solid var(--border-color);
             padding: 15px;
             margin-bottom: 15px;
             border-radius: var(--border-radius);
-            background: rgba(10, 25, 47, 0.8);
+            background: rgba(244, 241, 234, 0.8);
+            color: var(--primary-color);
+            transition: all 0.3s ease;
         }
 
-        .record-item:hover {
+        .record-item:hover, .prescription-item:hover {
             box-shadow: var(--glow-shadow);
+            background: rgba(212, 176, 114, 0.2);
         }
 
-        /* 文件上传样式 */
-        .file-preview {
-            margin-top: 10px;
-            padding: 10px;
-            border: 1px dashed var(--border-color);
-            border-radius: var(--border-radius);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .remove-file {
-            cursor: pointer;
-            color: var(--secondary-color);
-        }
-
-        /* 语音输入动画 */
-        @keyframes recording {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
-        }
-
-        .recording {
-            animation: recording 1s infinite;
-            background: var(--secondary-color) !important;
-            color: var(--primary-color) !important;
-        }
-
-        @media (max-width: 768px) {
-            .control-panel {
-                grid-template-columns: 1fr;
-            }
-            
-            .mode-selector {
-                flex-direction: column;
-            }
-            
-            .chat-container {
-                margin: 10px;
-                padding: 10px;
-            }
-        }
-
-        .audio-btn {
-            position: absolute;
-            right: 60px;
-            top: 10px;
-            background: transparent;
-            border: 1px solid var(--border-color);
-            color: var(--text-color);
-            padding: 5px 10px;
-            border-radius: var(--border-radius);
-            cursor: pointer;
-            font-family: 'Noto Serif SC', serif;
-            font-size: 12px;
-            opacity: 0;
-            transition: all 0.3s ease;
-        }
-
-        .message:hover .audio-btn {
-            opacity: 1;
-        }
-
-        .audio-btn:hover, .audio-btn.speaking {
-            background: var(--secondary-color);
-            color: var(--primary-color);
-        }
-
-        .audio-btn.speaking {
-            animation: pulse 1s infinite;
-        }
-
-        .voice-control-btn {
-            background: var(--secondary-color);
-            color: var(--primary-color);
-            padding: 10px 15px;
-            border: none;
-            border-radius: var(--border-radius);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            transition: all 0.3s ease;
-        }
-
-        .voice-control-btn.disabled {
-            background: #ccc;
-            opacity: 0.7;
-        }
-
-        .voice-control-btn i {
-            font-size: 16px;
-        }
-
+        /* 新增记录和历史按钮样式 */
         .new-chat-btn, .history-btn {
             padding: 10px 15px;
-            background: transparent;
+            background: rgba(244, 241, 234, 0.9);
             border: 1px solid var(--border-color);
-            color: var(--text-color);
+            color: var(--primary-color);
             border-radius: var(--border-radius);
             cursor: pointer;
             display: flex;
             align-items: center;
             gap: 5px;
             transition: all 0.3s ease;
+            font-family: 'Noto Serif SC', serif;
         }
 
         .new-chat-btn:hover, .history-btn:hover {
             background: var(--secondary-color);
             color: var(--primary-color);
+            box-shadow: var(--glow-shadow);
         }
 
-        /* 文件预览容器 */
-        .file-preview-container {
-            display: none;
-            margin: 10px 0;
-            max-height: 300px;
-            overflow-y: auto;
-            background: rgba(10, 25, 47, 0.8);
-            border: 1px solid var(--border-color);
-            border-radius: var(--border-radius);
-            padding: 15px;
+        .new-chat-btn i, .history-btn i {
+            color: var(--accent-color);
         }
 
-        .file-preview-container.active {
-            display: block;
-        }
-
-        /* 文件预览 */
-        .file-preview {
-            margin-bottom: 15px;
-            padding: 10px;
-            background: rgba(10, 25, 47, 0.9);
-            border-radius: var(--border-radius);
-            border: 1px solid rgba(100, 255, 218, 0.3);
-        }
-
-        .file-preview:last-child {
-            margin-bottom: 0;
-        }
-
-        .file-info {
-            display: flex;
-            align-items: center;
-            margin-bottom: 10px;
-            padding-bottom: 5px;
-            border-bottom: 1px solid rgba(100, 255, 218, 0.2);
-        }
-
-        .file-name {
-            font-weight: bold;
-            color: var(--secondary-color);
-            margin-right: 10px;
-            flex: 1;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .file-size {
-            color: var(--text-color);
-            font-size: 0.8em;
-            margin-right: 10px;
-        }
-
-        .remove-file-btn {
-            background: transparent;
-            border: none;
-            color: var(--secondary-color);
-            cursor: pointer;
-            font-size: 1.2em;
-            padding: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            transition: all 0.3s ease;
-        }
-
-        .remove-file-btn:hover {
-            background: rgba(100, 255, 218, 0.1);
-            color: #ff6464;
-        }
-
-        .loading-preview {
-            padding: 10px;
-            text-align: center;
-            color: var(--secondary-color);
-            font-style: italic;
-        }
-
-        .error-preview {
-            padding: 10px;
-            text-align: center;
-            color: #ff6464;
-            font-style: italic;
+        .new-chat-btn:hover i, .history-btn:hover i {
+            color: var(--primary-color);
         }
 
         .chat-image {
@@ -916,11 +866,141 @@
             border-radius: 5px;
             border: 1px solid rgba(100, 255, 218, 0.2);
         }
+
+        .history-item:hover .timestamp {
+            color: var(--primary-color);
+        }
+        
+        .history-actions {
+            margin-top: 20px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border-color);
+        }
+        
+        .refresh-btn {
+            background-color: rgba(40, 167, 69, 0.1);
+            color: #28a745;
+            border: 1px solid rgba(40, 167, 69, 0.3);
+            padding: 8px 15px;
+            border-radius: var(--border-radius);
+            width: 100%;
+            margin-top: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .refresh-btn:hover {
+            background-color: #28a745;
+            color: white;
+        }
+        
+        .no-history {
+            padding: 10px;
+            text-align: center;
+            color: #666;
+            font-style: italic;
+        }
+        
+        .history-panel h3 {
+            font-size: 1.1rem;
+            margin-top: 15px;
+            margin-bottom: 10px;
+            color: var(--primary-color);
+            border-bottom: 1px dashed var(--border-color);
+            padding-bottom: 5px;
+        }
+
+        .history-title {
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+        
+        .action-btn {
+            background-color: #f4f1ea;
+            color: var(--primary-color);
+            border: 1px solid var(--border-color);
+            padding: 8px 15px;
+            border-radius: var(--border-radius);
+            width: 100%;
+            margin-top: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .save-btn {
+            background-color: rgba(40, 167, 69, 0.1);
+            color: #28a745;
+            border: 1px solid rgba(40, 167, 69, 0.3);
+        }
+        
+        .save-btn:hover {
+            background-color: #28a745;
+            color: white;
+        }
+        
+        .refresh-btn:hover {
+            background-color: var(--info-color);
+            color: white;
+        }
     </style>
 </head>
 <body>
+    <!-- 页面装饰边框 -->
+    <div class="page-border"></div>
+    
+    <!-- 导航栏 -->
+    <div class="navbar">
+        <a href="/" class="navbar-brand">
+            <i class="fas fa-heartbeat"></i>岐黄智语
+        </a>
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a href="/" class="nav-link active">首页</a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ url_for('knowledge.articles_list') }}" class="nav-link">健康知识</a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ url_for('herbs.herbs_list') }}" class="nav-link">中药药典</a>
+            </li>
+            {% if current_user.is_authenticated %}
+            <li class="nav-item">
+                <a href="{{ url_for('dashboard') }}" class="nav-link">个人中心</a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ url_for('appointment.appointments') }}" class="nav-link">预约管理</a>
+            </li>
+            <!-- 管理系统按钮 - 仅对管理员显示 -->
+            {% if current_user.role == 'admin' %}
+            <li class="nav-item">
+                <a href="{{ url_for('admin.dashboard') }}" class="nav-link" style="color: #d4b072; font-weight: bold; background: rgba(91, 70, 54, 0.3); border: 1px solid #d4b072;">
+                    <i class="fas fa-cog"></i> 管理系统
+                </a>
+            </li>
+            {% endif %}
+            <li class="nav-item">
+                <a href="{{ url_for('auth.logout') }}" class="nav-link">退出登录</a>
+            </li>
+            {% else %}
+            <li class="nav-item login-register">
+                <a href="{{ url_for('auth.login') }}" class="login-btn">登录</a>
+                <a href="{{ url_for('auth.register') }}" class="register-btn">注册</a>
+            </li>
+            {% endif %}
+        </ul>
+    </div>
+
     <div class="chat-container">
-        <h1>AI 中医助手</h1>
+        <h1>AI 中医智能诊疗助手</h1>
         
         <div class="control-panel">
             <div class="symptom-selector">
@@ -982,7 +1062,7 @@
         
         <div class="input-area">
             <div class="file-preview-container" id="file-preview-container"></div>
-            <div class="input-container">
+        <div class="input-container">
                 <textarea id="message-input" placeholder="请输入您的问题..." rows="1" oninput="autoResize(this)"></textarea>
                 <div class="input-buttons">
                     <button class="send-btn" onclick="sendMessage()">
@@ -1103,10 +1183,24 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            loadRecords();
-            loadPrescriptions();
+            // 初始化语音合成
             initSpeechSynthesis();
             
+            // 从服务器加载历史聊天记录
+            loadServerChatHistory();
+            
+            // 尝试从本地存储加载历史记录状态
+            try {
+                // 预加载历史记录，以便在点击历史按钮时可以立即显示
+                const history = JSON.parse(localStorage.getItem('chatHistory') || '[]');
+                console.log(`发现${history.length}条本地历史记录`);
+            } catch (e) {
+                console.error('加载本地历史记录出错:', e);
+                // 如果本地历史记录损坏，则重置
+                localStorage.removeItem('chatHistory');
+            }
+            
+            // 初始化模式按钮事件监听
             document.querySelectorAll('.mode-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
@@ -1115,7 +1209,16 @@
                     updatePlaceholder();
                 });
             });
-            
+
+            // 初始化消息输入框
+            const messageInput = document.getElementById('message-input');
+            messageInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+
             document.getElementById('symptom-select').addEventListener('change', function() {
                 currentSymptoms = this.value;
             });
@@ -1148,59 +1251,6 @@
             }
         }
         
-        async function loadRecords() {
-            try {
-                const response = await fetch('/api/records');
-                const records = await response.json();
-                const recordsList = document.getElementById('records-list');
-                recordsList.innerHTML = records.map(record => `
-                    <div class="record-item">
-                        <div class="record-symptoms">主诉：${record.symptoms}</div>
-                        <div class="record-diagnosis">诊断：${record.diagnosis}</div>
-                        <div class="record-prescription">处方：${record.prescription}</div>
-                        <div class="record-time">${record.timestamp}</div>
-                    </div>
-                `).join('');
-            } catch (error) {
-                console.error('加载诊断记录失败:', error);
-            }
-        }
-        
-        async function loadPrescriptions() {
-            try {
-                const response = await fetch('/api/prescriptions');
-                const prescriptions = await response.json();
-                const prescriptionsList = document.getElementById('prescriptions-list');
-                prescriptionsList.innerHTML = prescriptions.map(prescription => `
-                    <div class="prescription-item">
-                        <div class="prescription-herbs">药方：${prescription.herbs}</div>
-                        <div class="prescription-dosage">用量：${prescription.dosage}</div>
-                        <div class="prescription-usage">用法：${prescription.usage}</div>
-                        <div class="prescription-notes">注意事项：${prescription.notes}</div>
-                        <div class="prescription-time">${prescription.timestamp}</div>
-                    </div>
-                `).join('');
-            } catch (error) {
-                console.error('加载处方记录失败:', error);
-            }
-        }
-        
-        function toggleRecords() {
-            const panel = document.getElementById('records-panel');
-            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-            if (panel.style.display === 'block') {
-                loadRecords();
-            }
-        }
-        
-        function togglePrescriptions() {
-            const panel = document.getElementById('prescriptions-panel');
-            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-            if (panel.style.display === 'block') {
-                loadPrescriptions();
-            }
-        }
-
         async function sendMessage() {
             const messageInput = document.getElementById('message-input');
             const message = messageInput.value.trim();
@@ -1311,20 +1361,48 @@
                             if (buffer) {
                                 contentElement.innerHTML = marked.parse(buffer);
                                 highlightCode();
+                                // 处理语音朗读完整消息
+                                speakText(buffer);
                             }
                             return;
                         }
                         
                         // 解码接收到的数据
                         const text = decoder.decode(value);
-                        buffer += text;
+                        const lines = text.split('\n');
                         
-                        // 更新消息内容
-                        contentElement.innerHTML = marked.parse(buffer);
-                        highlightCode();
-                        
-                        // 滚动到底部
-                        scrollToBottom();
+                        // 处理每行数据
+                        lines.forEach(line => {
+                            if (line.startsWith('data: ')) {
+                                try {
+                                    // 提取JSON数据
+                                    const jsonData = JSON.parse(line.substring(6));
+                                    
+                                    if (jsonData.status === 'success') {
+                                        // 将消息添加到缓冲区
+                                        buffer += jsonData.message;
+                                        
+                                        // 更新消息内容
+                                        contentElement.innerHTML = marked.parse(buffer);
+                                        highlightCode();
+                                        
+                                        // 滚动到底部
+                                        scrollToBottom();
+                                        
+                                        // 如果需要语音朗读，添加到语音队列
+                                        if (voiceControlEnabled && jsonData.message.trim() !== '') {
+                                            speakText(jsonData.message);
+                                        }
+                                    } else if (jsonData.status === 'error') {
+                                        // 显示错误消息
+                                        contentElement.innerHTML = `<div class="error-message">${jsonData.message}</div>`;
+                                        showNotification(jsonData.message, 'error');
+                                    }
+                                } catch (e) {
+                                    console.error('解析SSE数据错误:', e, line);
+                                }
+                            }
+                        });
                         
                         // 继续读取流
                         return readStream();
@@ -1380,7 +1458,7 @@
                                 <div class="file-transcript">${file.content || '无转写内容'}</div>
                             </div>
                         `;
-                    } else {
+                } else {
                         // 其他文件
                         const previewText = file.content ? file.content.substring(0, 200) + (file.content.length > 200 ? '...' : '') : '无法预览文件内容';
                         messageContent += `
@@ -1684,27 +1762,39 @@
                 // 保存当前对话到历史记录
                 const chatBox = document.getElementById('chat-box');
                 const messages = chatBox.getElementsByClassName('message');
+                
                 if (messages.length > 0) {
-                    const historyItem = {
-                        messages: Array.from(messages).map(msg => ({
+                    // 只保存有实际内容的消息
+                    const messagesArray = Array.from(messages)
+                        .filter(msg => msg.textContent.trim() !== '') // 过滤空消息
+                        .map(msg => ({
                             content: msg.textContent,
                             isUser: msg.classList.contains('user-message')
-                        })),
-                        timestamp: new Date().toLocaleString()
-                    };
+                        }));
                     
-                    // 获取现有历史记录
-                    let history = JSON.parse(localStorage.getItem('chatHistory') || '[]');
-                    history.unshift(historyItem);
-                    // 最多保存20条历史记录
-                    history = history.slice(0, 20);
-                    localStorage.setItem('chatHistory', JSON.stringify(history));
+                    if (messagesArray.length > 0) {
+                        const historyItem = {
+                            messages: messagesArray,
+                            timestamp: new Date().toLocaleString()
+                        };
+                        
+                        console.log("保存历史记录：", historyItem);
+                        
+                        // 获取现有历史记录
+                        let history = JSON.parse(localStorage.getItem('chatHistory') || '[]');
+                        history.unshift(historyItem);
+                        // 最多保存20条历史记录
+                        history = history.slice(0, 20);
+                        localStorage.setItem('chatHistory', JSON.stringify(history));
+                    }
                 }
                 
                 // 清空当前对话
                 chatBox.innerHTML = '';
+                
                 // 重置症状选择
                 document.getElementById('symptom-select').value = '';
+                
                 // 重置模式选择
                 document.querySelectorAll('.mode-btn').forEach(btn => {
                     btn.classList.remove('active');
@@ -1713,14 +1803,30 @@
                 currentMode = 'general';
                 
                 // 发送请求清除服务器端会话
-                fetch('/clear', { method: 'POST' });
+                fetch('/clear', { method: 'POST' })
+                    .then(response => {
+                        if (response.ok) {
+                            console.log("服务器历史记录已清除");
+                        } else {
+                            console.error("清除服务器历史记录失败");
+                        }
+                    })
+                    .catch(error => {
+                        console.error("清除历史记录请求出错:", error);
+                    });
             }
         }
 
         function toggleHistory() {
             const panel = document.getElementById('history-panel');
-            panel.classList.toggle('active');
+            
             if (panel.classList.contains('active')) {
+                // 关闭面板
+                panel.classList.remove('active');
+                // 不需要立即加载历史，因为面板正在关闭
+            } else {
+                // 打开面板
+                panel.classList.add('active');
                 loadHistory();
             }
         }
@@ -1729,17 +1835,55 @@
             const historyList = document.getElementById('history-list');
             const history = JSON.parse(localStorage.getItem('chatHistory') || '[]');
             
-            historyList.innerHTML = history.map((item, index) => `
-                <div class="history-item" onclick="loadChat(${index})">
-                    <div class="preview">${item.messages[0]?.content.slice(0, 50)}...</div>
-                    <div class="timestamp">${item.timestamp}</div>
+            console.log("加载历史记录", history);
+            
+            // 添加标题，区分本地历史和当前会话
+            historyList.innerHTML = '<h3 class="history-title">本地存储的历史记录</h3>';
+            
+            // 添加本地存储的历史记录
+            if (history && history.length > 0) {
+                historyList.innerHTML += history.map((item, index) => {
+                    // 获取第一条消息内容
+                    let preview = "空对话";
+                    if (item.messages && item.messages.length > 0) {
+                        preview = item.messages[0].content || "无内容";
+                        // 截取预览文本
+                        preview = preview.slice(0, 50) + (preview.length > 50 ? '...' : '');
+                    }
+                    
+                    return `
+                        <div class="history-item local-history" onclick="loadChat(${index})">
+                            <div class="preview">${preview}</div>
+                            <div class="timestamp">${item.timestamp || new Date().toLocaleString()}</div>
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                historyList.innerHTML += '<div class="no-history">无本地历史记录</div>';
+            }
+            
+            // 添加手动保存当前会话按钮
+            historyList.innerHTML += `
+                <div class="history-actions">
+                    <h3 class="history-title">当前会话操作</h3>
+                    <button class="action-btn save-btn" onclick="saveCurrentChat()">
+                        <i class="fas fa-save"></i> 保存当前会话
+                    </button>
+                    <button class="action-btn refresh-btn" onclick="loadServerChatHistory()">
+                        <i class="fas fa-sync-alt"></i> 刷新当前会话
+                    </button>
                 </div>
-            `).join('');
+            `;
         }
 
         function loadChat(index) {
             if (confirm('加载历史对话将清除当前对话，是否继续？')) {
                 const history = JSON.parse(localStorage.getItem('chatHistory') || '[]');
+                if (!history || !history[index] || !history[index].messages) {
+                    alert('历史记录加载失败，数据格式可能已损坏');
+                    return;
+                }
+                
                 const chatBox = document.getElementById('chat-box');
                 
                 // 清空当前对话
@@ -1747,7 +1891,9 @@
                 
                 // 加载历史对话
                 history[index].messages.forEach(msg => {
-                    addMessage(msg.content, msg.isUser);
+                    if (msg && msg.content) {
+                        addMessage(msg.content, msg.isUser);
+                    }
                 });
                 
                 // 关闭历史面板
@@ -1756,6 +1902,47 @@
                 // 滚动到底部
                 chatBox.scrollTop = chatBox.scrollHeight;
             }
+        }
+
+        // 添加手动保存当前会话的功能
+        function saveCurrentChat() {
+            const chatBox = document.getElementById('chat-box');
+            const messages = chatBox.getElementsByClassName('message');
+            
+            if (messages.length === 0) {
+                alert('当前没有对话内容可保存');
+                return;
+            }
+            
+            // 将消息转换为可保存的格式
+            const messagesArray = Array.from(messages)
+                .filter(msg => msg.textContent.trim() !== '')
+                .map(msg => ({
+                    content: msg.textContent,
+                    isUser: msg.classList.contains('user-message')
+                }));
+            
+            if (messagesArray.length === 0) {
+                alert('当前没有有效的对话内容可保存');
+                return;
+            }
+            
+            const historyItem = {
+                messages: messagesArray,
+                timestamp: new Date().toLocaleString()
+            };
+            
+            // 获取现有历史记录
+            let history = JSON.parse(localStorage.getItem('chatHistory') || '[]');
+            history.unshift(historyItem);
+            // 最多保存20条历史记录
+            history = history.slice(0, 20);
+            localStorage.setItem('chatHistory', JSON.stringify(history));
+            
+            alert('当前对话已保存到历史记录中');
+            
+            // 重新加载历史记录列表
+            loadHistory();
         }
 
         // 文件上传处理函数
@@ -1975,6 +2162,47 @@
         function autoResize(textarea) {
             textarea.style.height = 'auto';
             textarea.style.height = textarea.scrollHeight + 'px';
+        }
+
+        // 新增函数：从服务器加载聊天历史
+        async function loadServerChatHistory() {
+            try {
+                const chatBox = document.getElementById('chat-box');
+                
+                // 获取服务器会话中的历史聊天记录
+                const response = await fetch('/api/chat_history', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    console.error('加载历史记录失败');
+                    return;
+                }
+                
+                const data = await response.json();
+                
+                if (data.status === 'success' && data.history && data.history.length > 0) {
+                    // 清空当前聊天框
+                    chatBox.innerHTML = '';
+                    
+                    // 显示历史消息
+                    data.history.forEach(message => {
+                        if (message.role === 'user') {
+                            addMessage(message.content, true);
+                        } else if (message.role === 'assistant') {
+                            addMessage(message.content, false);
+                        }
+                    });
+                    
+                    // 滚动到底部
+                    scrollToBottom();
+                }
+            } catch (error) {
+                console.error('加载历史记录出错:', error);
+            }
         }
     </script>
 </body>
