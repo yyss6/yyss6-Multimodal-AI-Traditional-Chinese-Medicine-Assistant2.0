@@ -102,6 +102,7 @@ python run.py
    - 在输入框中输入健康问题或中医相关咨询
    - 点击发送按钮或按Enter键发送消息
    - AI将实时生成并显示回复
+   - ![聊天界面](static/images/chat_interface.png)
 
 3. **中药大全**：
    - 访问 `/herbs/herbs` 浏览中药信息
