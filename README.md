@@ -102,27 +102,32 @@ python run.py
    - 在输入框中输入健康问题或中医相关咨询
    - 点击发送按钮或按Enter键发送消息
    - AI将实时生成并显示回复
-   - ![聊天界面](static/images/chat_interface.png)
+   - ![聊天界面](static/images/chat_interface1.png)
 
 3. **中药大全**：
    - 访问 `/herbs/herbs` 浏览中药信息
    - 每页显示6个中药
    - 支持按名称搜索和分类筛选
-
+   -  ![聊天界面](static/images/chat_interface2.png)
 4. **方剂大全**：
    - 访问 `/herbs/formulas` 浏览方剂信息
    - 每页显示4个方剂
    - 支持按名称搜索和分类筛选
+   -  ![聊天界面](static/images/chat_interface3.png)
 
 5. **健康文章**：
    - 访问 `/article/list` 浏览健康文章
    - 每页显示4篇文章
    - 支持评论、点赞、收藏功能
+   -  ![聊天界面](static/images/chat_interface4.png)
 
 6. **视频教程**：
    - 访问 `/knowledge/video_tutorials` 浏览视频教程
    - 每页显示3个视频
    - 支持按分类筛选
+   -  ![聊天界面](static/images/chat_interface5.png)
+7. **管理系统**：
+   -  ![聊天界面](static/images/chat_interface6.png)
 
 ## 项目结构
 
